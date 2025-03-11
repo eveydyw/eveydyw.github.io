@@ -1,4 +1,24 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on EV's Blog</title><link>https://eveydyw.github.io/blogs/</link><description>Recent content in Blogs on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Wed, 25 Oct 2023 13:49:14 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/index.xml" rel="self" type="application/rss+xml"/><item><title>PythonTools</title><link>https://eveydyw.github.io/blogs/pythontools/</link><pubDate>Wed, 25 Oct 2023 13:49:14 +0800</pubDate><guid>https://eveydyw.github.io/blogs/pythontools/</guid><description>&lt;h1 id="tools" class="heading">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on EV's Blog</title><link>https://eveydyw.github.io/blogs/</link><description>Recent content in Blogs on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Fri, 07 Mar 2025 13:42:30 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/index.xml" rel="self" type="application/rss+xml"/><item><title>RoPE</title><link>https://eveydyw.github.io/blogs/rope/</link><pubDate>Fri, 07 Mar 2025 13:42:30 +0800</pubDate><guid>https://eveydyw.github.io/blogs/rope/</guid><description>&lt;h2 id="rope" class="heading">
+ RoPE&lt;a href="#rope" aria-labelledby="rope">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;p>&lt;code>RoPE &lt;/code> 通过 &lt;strong>绝对位置编码&lt;/strong> 的方式实现 &lt;strong>相对位置编码&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>绝对位置编码&lt;/strong>：&lt;strong>位置索引&lt;/strong> 直接进行编码。一般都是直接构建 &lt;strong>词嵌入向量&lt;/strong> 和 &lt;strong>位置嵌入向量&lt;/strong> 直接相加。&lt;/p></description></item><item><title>LSH</title><link>https://eveydyw.github.io/blogs/lsh/</link><pubDate>Mon, 17 Jun 2024 23:04:04 +0800</pubDate><guid>https://eveydyw.github.io/blogs/lsh/</guid><description>&lt;p>在 &lt;strong>Top N 推荐&lt;/strong>中，我们需要处理的是大量高维度的数据，如何快速地从大量的高维度数据集中找出与某条数据最为接近的一条或多条数据成为了难题。&lt;/p>
+&lt;p>如果只是一些小规模的低维度数据集，可以很容易地使用线性搜索来解决问题；但如果我们要在一个庞大的高维度数据集中使用线性搜索来进行匹配，则会消耗很多时间。&lt;/p>
+&lt;p>因此，需要采取一些类似于索引的技术来加速查询过程，这些技术通常被统称为 &lt;strong>最近邻查找 (Nearest Neighbor, &lt;code>NN&lt;/code>)&lt;/strong> ，而在处理大规模数据时，还可以考虑采用 &lt;strong>近似最近邻查找 (Approximate Nearest Neighbor, &lt;code>ANN&lt;/code>)&lt;/strong>。其中一种常用的方法就是&lt;strong>局部敏感哈希 (Locality-Sensitive Hashing, &lt;code>LSH&lt;/code>)&lt;/strong>。&lt;/p>
+&lt;h2 id="hash" class="heading">
+ Hash&lt;a href="#hash" aria-labelledby="hash">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;p>&lt;code>Hash&lt;/code>一般翻译做 &lt;strong>散列&lt;/strong>，就是把任意长度的输入（又叫做 &lt;strong>预映射&lt;/strong>， &lt;strong>pre-image&lt;/strong>），通过散列算法，变换成固定长度的输出，该输出就是散列值。&lt;/p></description></item><item><title>FlashAttention</title><link>https://eveydyw.github.io/blogs/flashattention/</link><pubDate>Wed, 05 Jun 2024 22:58:50 +0800</pubDate><guid>https://eveydyw.github.io/blogs/flashattention/</guid><description>&lt;h2 id="background" class="heading">
+ Background&lt;a href="#background" aria-labelledby="background">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;h3 id="structure-of-gpu-memory" class="heading">
+ Structure of GPU Memory&lt;a href="#structure-of-gpu-memory" aria-labelledby="structure-of-gpu-memory">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h3>&lt;center>
+&lt;img style = " border-radius: 0.3125em; box-shadow: 0 0.2rem 0.4rem 0 rgba(34,36,38,.12); margin: 1rem;" 
+src = "pics/image-20250310221404825.png" 
+width = "35%" 
+alt = "">
+&lt;/center>
+&lt;p>在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 &lt;strong>越上层空间越小&lt;/strong> 但是 &lt;strong>速度越快&lt;/strong>&lt;/p></description></item><item><title>PythonTools</title><link>https://eveydyw.github.io/blogs/pythontools/</link><pubDate>Wed, 25 Oct 2023 13:49:14 +0800</pubDate><guid>https://eveydyw.github.io/blogs/pythontools/</guid><description>&lt;h1 id="tools" class="heading">
  Tools&lt;a href="#tools" aria-labelledby="tools">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h1>&lt;h2 id="docstring-parser" class="heading">
  Docstring Parser&lt;a href="#docstring-parser" aria-labelledby="docstring-parser">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
