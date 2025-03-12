@@ -1,4 +1,41 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on EV's Blog</title><link>https://eveydyw.github.io/blogs/</link><description>Recent content in Blogs on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Tue, 27 Aug 2024 13:42:30 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/index.xml" rel="self" type="application/rss+xml"/><item><title>RoPE</title><link>https://eveydyw.github.io/blogs/rope/</link><pubDate>Tue, 27 Aug 2024 13:42:30 +0800</pubDate><guid>https://eveydyw.github.io/blogs/rope/</guid><description>&lt;h2 id="rope" class="heading">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on EV's Blog</title><link>https://eveydyw.github.io/blogs/</link><description>Recent content in Blogs on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Sat, 21 Sep 2024 23:35:21 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/index.xml" rel="self" type="application/rss+xml"/><item><title>Attention</title><link>https://eveydyw.github.io/blogs/attention/</link><pubDate>Sat, 21 Sep 2024 23:35:21 +0800</pubDate><guid>https://eveydyw.github.io/blogs/attention/</guid><description>&lt;h2 id="kv-cache" class="heading">
+ KV Cache&lt;a href="#kv-cache" aria-labelledby="kv-cache">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;p>&lt;code>KV Cache&lt;/code> 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。&lt;/p>
+&lt;p>&lt;code>KV Cache&lt;/code> &lt;strong>只能用于 Decoder 架构的模型&lt;/strong>，因为 Decoder 有 &lt;strong>Causal Mask&lt;/strong>，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ &lt;span class="mathjax-inline">
+ &lt;span class="katex">&lt;math xmlns="http://www.w3.org/1998/Math/MathML">&lt;semantics>&lt;mrow>&lt;mi>K&lt;/mi>&lt;/mrow>&lt;annotation encoding="application/x-tex">K&lt;/annotation>&lt;/semantics>&lt;/math>&lt;/span>
+ &lt;/span>
+ 
+ 
+
+ 和 
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ &lt;span class="mathjax-inline">
+ &lt;span class="katex">&lt;math xmlns="http://www.w3.org/1998/Math/MathML">&lt;semantics>&lt;mrow>&lt;mi>V&lt;/mi>&lt;/mrow>&lt;annotation encoding="application/x-tex">V&lt;/annotation>&lt;/semantics>&lt;/math>&lt;/span>
+ &lt;/span>
+ 
+ 
+
+ 可以缓存起来。&lt;/p></description></item><item><title>RoPE</title><link>https://eveydyw.github.io/blogs/rope/</link><pubDate>Tue, 27 Aug 2024 13:42:30 +0800</pubDate><guid>https://eveydyw.github.io/blogs/rope/</guid><description>&lt;h2 id="rope" class="heading">
  RoPE&lt;a href="#rope" aria-labelledby="rope">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h2>&lt;p>&lt;code>RoPE &lt;/code> 通过 &lt;strong>绝对位置编码&lt;/strong> 的方式实现 &lt;strong>相对位置编码&lt;/strong>&lt;/p>
 &lt;ul>
@@ -18,7 +55,23 @@ src = "pics/image-20250310221404825.png"
 width = "35%" 
 alt = "">
 &lt;/center>
-&lt;p>在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 &lt;strong>越上层空间越小&lt;/strong> 但是 &lt;strong>速度越快&lt;/strong>&lt;/p></description></item><item><title>PythonTools</title><link>https://eveydyw.github.io/blogs/pythontools/</link><pubDate>Wed, 25 Oct 2023 13:49:14 +0800</pubDate><guid>https://eveydyw.github.io/blogs/pythontools/</guid><description>&lt;h1 id="tools" class="heading">
+&lt;p>在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 &lt;strong>越上层空间越小&lt;/strong> 但是 &lt;strong>速度越快&lt;/strong>&lt;/p></description></item><item><title>Transformer</title><link>https://eveydyw.github.io/blogs/transformer/</link><pubDate>Tue, 12 Mar 2024 19:52:32 +0800</pubDate><guid>https://eveydyw.github.io/blogs/transformer/</guid><description>&lt;p>标准的 &lt;strong>Transformer&lt;/strong> 模型主要由两个模块构成：&lt;/p>
+&lt;center>
+&lt;img style = " border-radius: 0.3125em; box-shadow: 0 0.2rem 0.4rem 0 rgba(34,36,38,.12); margin: 1rem;" width = "35%" alt = "" 
+src = "pics/image-20250312200523538.png" >
+&lt;/center>
+
+
+
+
+
+ &lt;blockquote class="blockquote">
+ &lt;ul>
+&lt;li>&lt;strong>Encoder（左边）&lt;/strong>：负责理解输入文本，为每个输入构造对应的语义表示（语义特征）；&lt;/li>
+&lt;li>&lt;strong>Decoder（右边）&lt;/strong>：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。&lt;/li>
+&lt;/ul>
+ &lt;/blockquote>
+&lt;p>这两个模块可以根据任务的需求而单独使用：&lt;/p></description></item><item><title>PythonTools</title><link>https://eveydyw.github.io/blogs/pythontools/</link><pubDate>Wed, 25 Oct 2023 13:49:14 +0800</pubDate><guid>https://eveydyw.github.io/blogs/pythontools/</guid><description>&lt;h1 id="tools" class="heading">
  Tools&lt;a href="#tools" aria-labelledby="tools">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h1>&lt;h2 id="docstring-parser" class="heading">
  Docstring Parser&lt;a href="#docstring-parser" aria-labelledby="docstring-parser">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
