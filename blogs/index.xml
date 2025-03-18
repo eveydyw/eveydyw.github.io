@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on EV's Blog</title><link>https://eveydyw.github.io/blogs/</link><description>Recent content in Blogs on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Sat, 21 Sep 2024 23:35:21 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/index.xml" rel="self" type="application/rss+xml"/><item><title>Attention</title><link>https://eveydyw.github.io/blogs/attention/</link><pubDate>Sat, 21 Sep 2024 23:35:21 +0800</pubDate><guid>https://eveydyw.github.io/blogs/attention/</guid><description>&lt;h2 id="kv-cache" class="heading">
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Blogs on EV's Blog</title><link>https://eveydyw.github.io/blogs/</link><description>Recent content in Blogs on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Sat, 21 Sep 2024 23:35:21 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/index.xml" rel="self" type="application/rss+xml"/><item><title>Transformer Attention</title><link>https://eveydyw.github.io/blogs/transformer-attention/</link><pubDate>Sat, 21 Sep 2024 23:35:21 +0800</pubDate><guid>https://eveydyw.github.io/blogs/transformer-attention/</guid><description>&lt;h2 id="kv-cache" class="heading">
  KV Cache&lt;a href="#kv-cache" aria-labelledby="kv-cache">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h2>&lt;p>&lt;code>KV Cache&lt;/code> 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。&lt;/p>
 &lt;p>&lt;code>KV Cache&lt;/code> &lt;strong>只能用于 Decoder 架构的模型&lt;/strong>，因为 Decoder 有 &lt;strong>Causal Mask&lt;/strong>，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 
@@ -71,7 +71,28 @@ src = "pics/image-20250312200523538.png" >
 &lt;li>&lt;strong>Decoder（右边）&lt;/strong>：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。&lt;/li>
 &lt;/ul>
  &lt;/blockquote>
-&lt;p>这两个模块可以根据任务的需求而单独使用：&lt;/p></description></item><item><title>PythonTools</title><link>https://eveydyw.github.io/blogs/pythontools/</link><pubDate>Wed, 25 Oct 2023 13:49:14 +0800</pubDate><guid>https://eveydyw.github.io/blogs/pythontools/</guid><description>&lt;h1 id="tools" class="heading">
+&lt;p>这两个模块可以根据任务的需求而单独使用：&lt;/p></description></item><item><title>Agents 框架</title><link>https://eveydyw.github.io/blogs/agents/</link><pubDate>Wed, 01 Nov 2023 14:26:34 +0800</pubDate><guid>https://eveydyw.github.io/blogs/agents/</guid><description>&lt;p>&lt;strong>LLM Powered Autonomous Agents&lt;/strong>&lt;/p>
+&lt;p>在基于 LLM 驱动的 agent 体系里, LLM 作为agent的大脑，加其他 3个能力作为补充：&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>规划能力&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>子目标与拆解: Agent能够把大的任务拆解为更小的，可管理的子任务，实现复杂任务的高效处理。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>自省与改进: Agent能基于过去的行动做自我批评和自我改进，从过去的错误中学习从而改进未来的动作，从而能够改善最终的结果&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>记忆&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>感官记忆：原始输入&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>短期记忆：in-context learning&lt;/p></description></item><item><title>PythonTools</title><link>https://eveydyw.github.io/blogs/pythontools/</link><pubDate>Wed, 25 Oct 2023 13:49:14 +0800</pubDate><guid>https://eveydyw.github.io/blogs/pythontools/</guid><description>&lt;h1 id="tools" class="heading">
  Tools&lt;a href="#tools" aria-labelledby="tools">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h1>&lt;h2 id="docstring-parser" class="heading">
  Docstring Parser&lt;a href="#docstring-parser" aria-labelledby="docstring-parser">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
