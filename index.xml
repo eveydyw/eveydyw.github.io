@@ -9,7 +9,57 @@
 &lt;td class="lntd">
 &lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl">&lt;span class="nx">hugo&lt;/span> &lt;span class="nx">new&lt;/span> &lt;span class="nx">content&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="nx">posts&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="nx">my&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="nx">first&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="nx">post&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">md&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
 &lt;/div>
-&lt;/div>&lt;/div>&lt;p>启动 Hugo 的开发服务器以查看网站&lt;/p></description></item><item><title>Transformer Attention</title><link>https://eveydyw.github.io/blogs/transformer-attention/</link><pubDate>Sat, 21 Sep 2024 23:35:21 +0800</pubDate><guid>https://eveydyw.github.io/blogs/transformer-attention/</guid><description>&lt;h2 id="kv-cache" class="heading">
+&lt;/div>&lt;/div>&lt;p>启动 Hugo 的开发服务器以查看网站&lt;/p></description></item><item><title>SearchEngine-2-相关性</title><link>https://eveydyw.github.io/blogs/searchengine/rel/</link><pubDate>Thu, 17 Oct 2024 20:37:39 +0800</pubDate><guid>https://eveydyw.github.io/blogs/searchengine/rel/</guid><description>&lt;h2 id="相关性定义与分档" class="heading">
+ 相关性：定义与分档&lt;a href="#%e7%9b%b8%e5%85%b3%e6%80%a7%e5%ae%9a%e4%b9%89%e4%b8%8e%e5%88%86%e6%a1%a3" aria-labelledby="相关性定义与分档">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;p>&lt;strong>工业界标准流程：&lt;/strong>&lt;/p>
+
+
+
+ 
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ &lt;div class="mathjax-display">
+ &lt;span class="katex">&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="block">&lt;semantics>&lt;mrow>&lt;mtext>制定标注规则&lt;/mtext>&lt;mo>→&lt;/mo>&lt;mtext>标注数据 &lt;/mtext>&lt;mo>→&lt;/mo>&lt;mtext> 训练模型&lt;/mtext>&lt;mo>→&lt;/mo>&lt;mtext>线上推理 &lt;/mtext>&lt;/mrow>&lt;annotation encoding="application/x-tex">
+\text{制定标注规则} \rightarrow \text{标注数据 } \rightarrow \text{ 训练模型} \rightarrow \text{线上推理 }
+&lt;/annotation>&lt;/semantics>&lt;/math>&lt;/span>
+ &lt;/div>
+ 
+ 
+
+&lt;ul>
+&lt;li>
+&lt;p>搜索产品和搜索算法团队定义相关性标注规则。&lt;/p></description></item><item><title>SearchEngine-1-概要</title><link>https://eveydyw.github.io/blogs/searchengine/basics/</link><pubDate>Mon, 14 Oct 2024 18:51:07 +0800</pubDate><guid>https://eveydyw.github.io/blogs/searchengine/basics/</guid><description>&lt;h2 id="搜索引擎的基本概念" class="heading">
+ 搜索引擎的基本概念&lt;a href="#%e6%90%9c%e7%b4%a2%e5%bc%95%e6%93%8e%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5" aria-labelledby="搜索引擎的基本概念">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>
+
+
+
+
+ &lt;blockquote class="blockquote">
+ &lt;ul>
+&lt;li>
+&lt;p>&lt;strong>查询词（query）&lt;/strong>：用户在搜索框中输入的词。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>查询建议（SUG）&lt;/strong>：用户点击搜索之前，搜索引擎会给出的相关词，如用户输入“深度学习”，SUG 可能为“深度学习框架”、“深度学习教程”等等。&lt;/p>
+&lt;p>作用是让搜索引擎用起来更方便。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>文档&lt;/strong>：搜索结果，如网页链接（Google、百度）、商品（Amazon、淘宝）、视频（YouTube、B 站）&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>搜索结果页&lt;/strong>：搜索完成的整个界面。&lt;/p>
+&lt;p>搜索结果页的主体为文档，会有首图、标题、摘要等预览&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>标签/筛选项&lt;/strong>：搜索结果页中包含的信息，如最新（按时间）、最热（按点击&amp;amp;交互次数）、视频。&lt;/p></description></item><item><title>Transformer Attention</title><link>https://eveydyw.github.io/blogs/transformer-attention/</link><pubDate>Sat, 21 Sep 2024 23:35:21 +0800</pubDate><guid>https://eveydyw.github.io/blogs/transformer-attention/</guid><description>&lt;h2 id="kv-cache" class="heading">
  KV Cache&lt;a href="#kv-cache" aria-labelledby="kv-cache">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h2>&lt;p>&lt;code>KV Cache&lt;/code> 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。&lt;/p>
 &lt;p>&lt;code>KV Cache&lt;/code> &lt;strong>只能用于 Decoder 架构的模型&lt;/strong>，因为 Decoder 有 &lt;strong>Causal Mask&lt;/strong>，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 
@@ -82,7 +132,11 @@ src = "pics/image-20250312200523538.png" >
 &lt;li>&lt;strong>Decoder（右边）&lt;/strong>：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。&lt;/li>
 &lt;/ul>
  &lt;/blockquote>
-&lt;p>这两个模块可以根据任务的需求而单独使用：&lt;/p></description></item><item><title>Agents 框架</title><link>https://eveydyw.github.io/blogs/agents/</link><pubDate>Wed, 01 Nov 2023 14:26:34 +0800</pubDate><guid>https://eveydyw.github.io/blogs/agents/</guid><description>&lt;p>&lt;strong>LLM Powered Autonomous Agents&lt;/strong>&lt;/p>
+&lt;p>这两个模块可以根据任务的需求而单独使用：&lt;/p></description></item><item><title>DistributedTraining</title><link>https://eveydyw.github.io/blogs/distributedtraining/</link><pubDate>Mon, 18 Dec 2023 23:17:24 +0800</pubDate><guid>https://eveydyw.github.io/blogs/distributedtraining/</guid><description>&lt;h2 id="数据并行dp--ddp" class="heading">
+ 数据并行(DP &amp;amp; DDP)&lt;a href="#%e6%95%b0%e6%8d%ae%e5%b9%b6%e8%a1%8cdp--ddp" aria-labelledby="数据并行dp--ddp">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;h3 id="dataparallel" class="heading">
+ DataParallel&lt;a href="#dataparallel" aria-labelledby="dataparallel">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h3>&lt;p>&lt;strong>DP&lt;/strong> 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。&lt;/p></description></item><item><title>Agents 框架</title><link>https://eveydyw.github.io/blogs/agents/</link><pubDate>Wed, 01 Nov 2023 14:26:34 +0800</pubDate><guid>https://eveydyw.github.io/blogs/agents/</guid><description>&lt;p>&lt;strong>LLM Powered Autonomous Agents&lt;/strong>&lt;/p>
 &lt;p>在基于 LLM 驱动的 agent 体系里, LLM 作为agent的大脑，加其他 3个能力作为补充：&lt;/p>
 &lt;ol>
 &lt;li>

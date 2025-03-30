@@ -36,11 +36,12 @@ Start project
 将初始需求发布
 Run：
 按照 Company hire 的顺序 Agent 依次行动
-Product Manager（Requirement Analysis） Architect（Architectural Design） Project Manager （ System Design） Engineer（Coding ） QA Engineer（Testing） Agent 定义 flowchart TD Agent["Agent"] --> LLM["LLM"] Agent["Agent"] --> Setting["Setting
+Product Manager（Requirement Analysis） Architect（Architectural Design） Project Manager （ System Design） Engineer（Coding ） QA Engineer（Testing） Agent 定义 %% width=60% flowchart TD Agent["Agent"] --> LLM["LLM"] Agent["Agent"] --> Setting["Setting
 (Agent的游戏角色)"] Agent --> States["States
 [[index, action]]"] Agent --> Actions["Actions
 [action]"] Agent --> RoleContext["RoleContext:
-(Agent的上下文本)"] LLM： Agent的大语言模型
+(Agent的上下文本)"] ​
+LLM： Agent的大语言模型
 Setting：Agent 的基本信息
 name profile goal constraints desc States：由序号和单个action 组成 ，方便在实际执行过程中定位到agent的 动作状态
 Actions：agent可以执行的actions
@@ -54,7 +55,7 @@ MemoryStorage (FaissStore) State： int，指定 agent 的 actions list 中的�
 Todo：指示 Agent 接下来要做的 action
 Watch：Agent 关注的 actions
 News： Agent 自身记忆与环境进行交互之后更新的内容
-Agent执行流程 graph LR Watch["watch
+Agent执行流程 %% width=60% graph LR Watch["watch
 (观察)"] --> Observe["observe"] Observe --> Think["think
 (set state)"] Think --> Act["act"] Act --> Publish["publish message"] Watch：初始化的时候定义。
 更新 RoleContext 的 watch，设定agent关心的action。
@@ -62,8 +63,8 @@ Agent执行流程 graph LR Watch["watch
 其它的步骤主要跟 RoleContext 相关
 RoleContext
 observe
-获取环境记忆与自身记忆对比，更新为news 获取环境记忆，更新自身记忆 think：
-根据new 更新自身state， 根据 state 更新 Todo list
+获取环境记忆与自身记忆对比，更新为 news 获取环境记忆，更新自身记忆 think：
+根据 news 更新自身 state， 根据 state 更新 Todo list
 act：
 执行 Todo list里的任务（与 LLM 交互），得到 response（message），更新自身 memory
 publish message：
@@ -80,13 +81,13 @@ chat-level ： 每个阶段都进一步分为 atomic chats 。这些原子聊天
 定义各个阶段参与的agent
 Start Chatting
 Phase：全流程中的具体阶段
-DemandAnalysis LanguageChoose Coding ArtDesign ArtIntegration CodeComplete CodeReviewComment CodeReviewModification CodeReviewHuman TestErrorSummary TestModification EnvironmentDoc Manual Chat中的关键机制 Role specialization 角色专业化
+%% width=20% graph LR Phase["Phase"] --> Assistant["Assistant role"] Phase --> User["User role"] Phase --> Prompt["Phase prompt"] Phase --> Name["Phase name"] DemandAnalysis LanguageChoose Coding ArtDesign ArtIntegration CodeComplete CodeReviewComment CodeReviewModification CodeReviewHuman TestErrorSummary TestModification EnvironmentDoc Manual Chat中的关键机制 Role specialization 角色专业化
 确保每个agent履行其指定的职能，并有效地促进面向任务的对话。
 Memory stream 记忆流
 维护聊天中以前对话的全面记录，使agent能够做出明智的决策。
 Self-reflection 自我反省
 当双方达成共识而不触发预定义的终止条件时，促使assistant反思拟议的决定。
-graph LR Phase["Phase"] --> Assistant["Assistant role"] Phase --> User["User role"] Phase --> Prompt["Phase prompt"] Phase --> Name["Phase name"] graph LR subgraph Interaction User((User Role)) <--> Assistant((Assistant Role)) end Interaction -->|seminar conclusion| C[RES] Phase prompt：有关phase的描述prompt，配置在 config 中
+%% width=30% graph LR subgraph Interaction User((User Role)) <--> Assistant((Assistant Role)) end Interaction -->|seminar conclusion| C[RES] Phase prompt：有关phase的描述prompt，配置在 config 中
 Assistant role / User role : 由 Chat Agent 扮演
 根据初始化的system message，Assistant agent 和 User agent轮流对话，直到出现 terminal signal 或者 轮次达到上限
 self reflection ：seminar conclusion （可选）对对话讨论进行总结，得出结论。 Agent 定义 System message： System 基本信息（角色的基本定义）
@@ -104,7 +105,126 @@ Assistant Agent: 通过LLM解决具体问题 UserProxy Agent: 用户代理，可
 Agent 配置
 System message： 默认的agent prompt Llm config： LLM 及其配置 Max consecutive auto reply： 最大对话次数 Human input mode：人参与的形式（ Assistant默认never，User Proxy 默认always） flowchart LR A[Agent] --> B[Conversable Agent] B --> C[Assistant Agent] B --> D[User Proxy Agent] B --> E[Group Chat Manager] 使用AutoGen构建的六个不同应用程序示例。他们的谈话模式显示了AutoGen的灵活性和实力。
 Example
-自定义AutoGen提供的内置代理 2 agents chatting 实现“画META 和TESLA 年初至今股票价格”示例 2 agents的具体聊天过程 Reference LLM Powered Autonomous Agents MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework ChatDev: Communicative Agents for Software Development AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation`}).add({id:1,tag:"en",href:"/blogs/flashattention/",title:"FlashAttention",description:"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",content:`Background Structure of GPU Memory 在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 越上层空间越小 但是 速度越快
+自定义AutoGen提供的内置代理 2 agents chatting 实现“画META 和TESLA 年初至今股票价格”示例 2 agents的具体聊天过程 Reference LLM Powered Autonomous Agents MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework ChatDev: Communicative Agents for Software Development AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation`}).add({id:1,tag:"en",href:"/blogs/distributedtraining/",title:"DistributedTraining",description:"分布式训练",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
+基本流程：
+加载模型、数据至内存；
+创建 DP 模型；
+DP 模型的 forward 过程：
+一个 batch 的数据均分到不同 device 上；
+为每个 device 复制一份模型；
+至此，每个 device 上有模型和一份数据，并行进行前向传播；
+收集各个 device 上的输出；
+每个 device 上的模型反向传播后，收集梯度到主 device 上，更新主 device 上的模型，将模型广播到其他 device 上；
+3-4 循环
+只有一个主进程，主进程下有多个线程
+每个线程管理一个 device 的训练。
+DP 中内存中只存在一份数据，各个线程间共享数据。DP 和 Parameter Server 的方式很像。
+DistributedDataParallel 基本流程
+准备阶段
+环境初始化：在各张卡上初始化进程并建立进程间通信，对应代码：init_process_group。
+模型广播：将模型 parameter、buffer 广播到各节点，对应代码：model = DDP(model).to(local_rank)。
+创建管理器 reducer，给每个参数注册梯度平均 hook。
+准备数据
+加载数据集，创建适用于分布式场景的数据采样器，以防不同节点使用的数据重叠。 训练阶段
+前向传播
+同步各进程状态（parameter 和 buffer）； 当 DDP 参数 find_unused_parameter 为 true 时，其会在 forward 结束时，启动一个回溯，标记未用到的参数，提前将这些设置为 ready。 计算梯度
+reducer 外面：
+各进程各自开始反向计算梯度； 当某个参数的梯度计算好了，其之前注册的 grad hook 就会触发，在 reducer 里把这个参数的状态标记为 ready； reducer 里面：
+当某个 bucket 的所有参数都是 ready 时，reducer 开始对这个 bucket 的所有参数开始一个异步的 all-reduce 梯度平均操作； 当所有 bucket 的梯度平均都结束后，reducer 把得到的平均梯度正式写入到 parameter.grad 里。 优化器应用梯度更新参数。
+DDP 与 DP 的区别 DP DDP 多线程 1. 受到 GIL 的限制 2. 单机工作 多进程 1. 多机多卡 迭代更新 传输数据包括 梯度和参数 1. 全程维护 一个 optimizer 2 梯度汇总到主 GPU, 主 GPU 进行参数更新 3. 主 GPU Broadcast 参数 给其他的 GPU 传输数据包括 梯度 1. 每个进程具有 自己的 optimizer 2. 各进程自己计算梯度 3. Ring All-Reduce 将 梯度 汇总平均 4. 各进程用梯度来独立的更新参数 通信效率 通信成本随着 GPU 数量线性增长 Ring All-Reduce 通信成本恒定，与 GPU 数量无关 DDP 中由于各进程中的模型，初始参数一致 (初始时刻进行一次 broadcast)，而每次用于更新参数的梯度也一致，因此，各进程的模型参数始终保持一致。
+TP (Tensor Parallelism) Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism
+每个张量都被 水平 分成多个块，因此张量的每个分片都位于其指定的 GPU 上，而不是让整个张量驻留在单个 GPU 上。在处理过程中，每个分片在不同的 GPU 上分别并行处理，结果在步骤结束时同步。
+MLP 的并行化 对于输入 X∈R(B×L)×D\\mathbfX \\in \\mathbbR^(B\\times L) \\times D ，它的行数是批量大小 BB 乘以序列长度 LL ，列数是隐藏层的宽度即 DD 。
+为了方便，令 B=1B=1 ，即 X∈RL×D\\mathbfX \\in \\mathbbR^L \\times D MLP 模块里面其实就是两个全连接层
+假定第一个隐藏层的权重是 A∈RD×D′\\mathbf A \\in \\mathbbR^D\\times D^\\prime ( D′D^\\prime 一般是 DD 的 44 倍)，则先做矩阵乘法，然后再接一个激活函数比如 GELU
+假定第二个隐藏层的权重是 B∈RD′×D\\mathbf B \\in \\mathbbR^D^\\prime \\times D ，最终得到 Z=σ(X⋅A)B\\mathbf Z = \\sigma(\\mathbf X \\cdot \\mathbf A) \\mathbf B 为了保证每个数据的完整，避免GPU 之间的通讯：
+对 A∈RD×D′\\mathbf A \\in \\mathbbR^D\\times D^\\prime 按 D′D^\\prime 所在的那一维作拆分（按行切），此时 X\\mathbfX 不需要拆分，直接复制保证每个GPU上都有即可 对 B∈RD′×D\\mathbf B \\in \\mathbbR^D^\\prime \\times D 按 D′D^\\prime 所在的那一维作拆分（按列切）。 将 A\\mathbf A 按行拆分成 nn 份： A=[A1,⋯ ,An]\\mathbf A= \\beginbmatrix\\mathbf A_1,\\cdots, \\mathbf A_n \\endbmatrix ，其中 Ai∈RD×D′n\\mathbf A_i \\in \\mathbbR^D \\times \\fracD^\\primen 。通过执行矩阵乘法得到:
+X⋅A=[XA1,⋯ ,XAn],XAi∈RL×D′n \\mathbf X \\cdot \\mathbf A = \\beginbmatrix\\mathbf X \\mathbf A_1,\\cdots, \\mathbf X\\mathbf A_n \\endbmatrix , \\quad \\mathbf X \\mathbf A_i \\in \\mathbbR^L\\times \\fracD^\\primen 它们可以独立输入GeLU：
+[Y1,⋯ ,Yn]=[GeLU⁡(XA1),⋯ ,GeLU⁡(XAn)],Yi∈RL×D′n \\beginbmatrix\\mathbf Y_1,\\cdots, \\mathbf Y_n\\endbmatrix = \\beginbmatrix\\operatornameGeLU\\left(\\mathbf X \\mathbf A_1\\right),\\cdots, \\operatornameGeLU \\left(\\mathbf X\\mathbf A_n \\right)\\endbmatrix , \\quad \\mathbf Y_i \\in \\mathbbR^L\\times \\fracD^\\primen 将 B\\mathbf B 按列拆分成 nn 份： B=[B1,⋯ ,Bn]⊤\\mathbf B= \\beginbmatrix\\mathbf B_1,\\cdots, \\mathbf B_n \\endbmatrix^\\top ，其中 Bi∈RD′n×D\\mathbf B_i \\in \\mathbfR^\\fracD^\\primen\\times D 。通过执行矩阵乘法得到
+Z=∑inZi=[Y1,⋯ ,Yn][B1,⋯ ,Bn]⊤,Z∈RL×D \\mathbf Z =\\sum_i^n\\mathbf Z_i = \\beginbmatrix\\mathbf Y_1,\\cdots, \\mathbf Y_n\\endbmatrix \\beginbmatrix\\mathbf B_1,\\cdots, \\mathbf B_n \\endbmatrix^\\top , \\quad \\mathbf Z \\in \\mathbbR^L\\times D 通过上述操作，我们可以更新任意深度的 MLP，只需在每个 拆列-拆行 序列之后同步 GPU
+Self-Attention 的并行化 各个头各自计算
+对于输入 X∈R(B×L)×D\\mathbfX \\in \\mathbbR^(B\\times L) \\times D ，它的行数是批量大小 BB 乘以序列长度 LL ，列数是隐藏层的宽度即 DD 。
+为了方便，令 B=1B=1 ，即 X∈RL×D\\mathbfX \\in \\mathbbR^L \\times D 。
+在自注意力机制中，输入 X\\mathbfX 会被复制成三份，分别对应为 X\\mathbfX 的 Q\\mathbf Q 、 K\\mathbf K 、 V\\mathbf V 向量矩阵。
+对于多头注意力，头的维度为 Dh\\fracDh , 假定 h=2h=2 ，之后针对每个头中输入 X\\mathbfX 矩阵中各个单词的 Q\\mathbf Q 向量，会与各自上下文的 K\\mathbf K 向量做缩放点积然后做 Softmax 得到一个注意力分数或权重，之后再与 V\\mathbf V 相乘，得到一个 L×DhL \\times \\fracDh 的输出
+每个头的计算是各自独立并行的，那意味着一个头可以放在 GPU 0 上，另一个头可以放在 GPU 1 上，最后 all reduce 每个头的结果
+由于前向和后向传播中每层都有 22 个 all reduce(MLP+Self-Attention)，因此 TP 需要设备间有非常快速的互联。
+因此，不建议跨多个节点进行 TP。
+如果节点有 44 个 GPU，则最高 TP 度设为 44 比较好。如果需要 TP 度为 88 ，则需要使用至少有 88 个 GPU 的节点
+PP (Pipeline Parallelism) GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism
+模型在多个 GPU 上 垂直 (即按层) 拆分:
+因此只有一个或多个模型层放置在单个 GPU 上。 每个 GPU 并行处理流水线的不同阶段，并处理 batch 把网络分成 44 块，每一块放在一个 GPU 上(不同的颜色表示不同的 GPU)，于是就有了 F0F_0 、 F1F_1 、 F2F_2 、 F3F_3 这 44 个前向路径和 B3B_3 、 B2B_2 、 B1B_1 、 B0B_0 逆序后向路径。
+朴素 PP 方案 在每个时间点只有一台设备在处理计算逻辑，完成计算后将结果发送给下一台设备。
+PP PP 引入了一个新的超参数来调整，称为 块 (chunks)。它定义了通过同一管级按顺序发送多少数据块。图中 chunks=4\\textchunks = 4 .
+GPU 0 在 chunk 0、1、2 和 3 ( F0,0F_0,0 、 F0,1F_0,1 、 F0,2F_0,2 、 F0,3F_0,3 ) 上执行相同的前向路径，然后等待。
+等其他 GPU 完成工作后，GPU 0 会再次开始工作，为块 3、2、1 和 0 ( B0,3B_0,3 、 B0,2B_0,2 、 B0,1B_0,1 、 B0,0B_0,0 ) 执行后向路径。
+请注意，从概念上讲，这与梯度累积 (gradient accumulation steps，GAS) 的意思相同。PyTorch 叫它chunks，而 DeepSpeed 叫它**GAS**。
+梯度累积（Gradient Accumulation） 的主要思想是在计算一个批次的梯度后不立刻更新模型参数，而是累积几个批次后再更新，这样便可以在不增加显存消耗的情况下模拟更大的批次。
+因为 块 (chunks），PP 引入了 micro-batches (MBS) 的概念。
+DP 将全局 batch size 拆分为小 batch size。
+如果 dp_degree=4\\textdp\\_degree = 4 ，则全局 batch_sizeall=1024\\textbatch\\_size_\\textall=1024 将拆分为 44 个小 batch size，每个小batch有 batch_sizedp=1024/4=256\\textbatch\\_size_\\textdp=1024/4 = 256 。
+如果 chunks=32\\textchunks = 32 ，最终得到的 micro batch_size=256/32=8\\textmicro batch\\_size = 256/32= 8 。
+每个管级一次处理一个 micro batch。
+计算 DP + PP 设置的全局批量大小的公式为: mbs∗chunks∗dp_degree (8∗32∗4=1024) \\textmbs*\\textchunks*\\textdp\\_degree (8*32*4=1024) 将 mini-batch 进一步划分成更小的 micro-batch，同时利用 pipipline 方案，每次处理一个 micro-batch 的数据，得到结果后，将该 micro-batch 的结果发送给下游设备，同时开始处理后一个 micro-batch 的数据，通过这套方案减小设备中的 Bubble(设备空闲的时间称为 Bubble)
+ZeRO 数据并行会产生大量冗余 Model States 的空间占用。每个 GPU 都需要存储大语言模型的相同副本，包括模型参数和优化器参数等。但是对于每个 GPU，在模型传播到某一层时，其他层的模型和优化器参数并不参与计算，这导致了严重的显存冗余现象。
+ZeRO 的本质，是在数据并行的基础上，对冗余空间占用进行深度优化
+ZeRO 仅在每个 GPU 上保留部分模型参数和优化器参数，当需要时再从其它 GPU 中读取进行计算，使用完之后便可以释放相应显存。
+显存占用 大规模训练中的显存占用可以分为 Model States 与 Residual states 两部分
+Model States
+Optimizer States Optimizer States 是 Optimizer 在进行梯度更新时所需要用到的数据，例如 SGD 中的 Momentum 以及使用混合精度训练时的 Float32 Master Parameters
+Gradient 在反向传播后所产生的梯度信息，其决定了参数的更新方向。
+Model Parameter 模型参数，也就是我们在整个过程中通过数据“学习”的信息
+在传统DDP下，每个进程都使用同样参数来进行训练。每个进程也会持有对 Optimizer States 的完整拷贝，同样占用了大量显存。
+在混合精度场景下，设模型参数量为 Φ \\mathbf\\Phi , 那么梯度的元素数量为 Φ\\mathbf\\Phi ，模型参数（fp16）、模型梯度（fp16） 和 优化器状态（fp32）总占用 显存：
+(2+2+K)Φ (2 +2+K)\\mathbf\\Phi Residual States
+除了模型状态之外的显存占用，包括 激活值（activation）、各种临时缓冲区（buffer）以及无法使用的显存碎片（fragmentation）
+ZeRO-DP （Model States） ZeRO 有三个不同级别，分别对应对 Model States 不同程度的分割 (Paritition)，图中的 Pos\\textP_\\textos 、 Pos+g\\textP_\\textos+\\textg 、 Pos+g+p\\textP_\\textos+\\textg+\\textp 分别代表 ZeRO-1、ZeRO-2、ZeRO-3
+ZeRO-1 [ Pos\\textP_\\textos ]： 分割 Optimizer States
+模型参数（parameters）和梯度（gradients）仍旧是每张卡保持一份，此时，每张卡的模型状态所需显存是 2Φ+2Φ+K∗ΦNd2\\mathbf\\Phi+2\\mathbf\\Phi+ \\fracK*\\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 4Φ4\\mathbf\\Phi 。
+ZeRO-2 [ Pos+g\\textP_\\textos+\\textg ]： 分割 Optimizer States 与 Gradients
+继续对模型梯度进行分片，模型参数仍旧是每张卡保持一份，此时，每张卡的模型状态所需显存是 2Φ+(2+K)∗ΦNd2\\mathbf\\Phi+ \\frac(2+K)*\\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 2Φ2\\mathbf\\Phi 。
+ZeRO-3 [ Pos+g+p\\textP_\\textos+\\textg+\\textp ]： 分割 Optimizer States、Gradients 与 Parameters
+继续对模型参数进行分片，此时每张卡的模型状态所需显存是 (2+2+K)∗ΦNd\\frac(2+2+K)*\\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 00 。
+ZeRO-1 和 ZeRO-2 并不会带来额外的通讯，但 ZeRO-3 每一次要算 W\\mathbf W 的时候，都得去别的机器拿回来，相当于带来了额外的通讯(增加了 50%)
+ZeRO V.S. 模型并行 ZeRO 是模型并行的形式，数据并行的实质。
+模型并行，是指在 forward 和 backward 的过程中，只需要用自己维护的那块 W\\mathbf W 来计算。
+即 同样的输入 X，每块 GPU 上各算模型的一部分，最后通过某些方式聚合结果。
+ZeRO 做 forward 和 backward 的时候，需要把各 GPU 上维护的 W\\mathbf W 聚合起来。
+即 本质上还是用完整的 W 进行计算。它是不同的输入 X，完整的参数 W，最终再做聚合。
+ZeRO-R（Residual States） PαP_\\alpha : Partitioned Activation Checkpointing
+activation 起到加速梯度计算的作用。
+使用分片方法，并且配合 checkpointing，可以灵活设置 activation的存储。每块 GPU 上只维护部分的 activation，需要时再从别的地方聚合过来就行。需要注意的是，activation 对显存的占用一般会远高于模型本身，通讯量也是巨大的，所以这块要灵活、有效地实验设计。
+CBC_B : Constant Size Buffer 临时缓冲区
+模型训练过程中经常会创建一些大小不等的临时缓冲区，比如对梯度进行 AllReduce。
+解决办法为预先创建一个固定的缓冲区 ，训练过程中不再动态创建，如果要传输的数据较小，则多组数据 bucket 后再一次性传输，提高效率
+固定大小的内存 buffer，它的目的在于：
+提升带宽利用率。当 GPU 数量上升，GPU 间的通讯次数也上升，每次的通讯量可能下降（但总通讯量不会变）。数据切片小了，就不能很好利用带宽了。所以这个 buffer 起到了积攒数据的作用：等数据积攒到一定大小，再进行通讯。
+使得存储大小可控。在每次通讯前，积攒的存储大小是常量，是已知可控的。更方便使用者对训练中的存储消耗和通讯时间进行预估。
+MDM_D : Memory Defragmentation 显存碎片
+显存出现碎片的一大原因是 gradient checkpointing 后，不断地创建和销毁那些不保存的激活值。
+解决方法是预先分配一块连续的显存，将常驻显存的模型状态和 checkpointed activation 存在里面，剩余显存用于动态创建和销毁 discarded activation。
+设置机制，对碎片化的存储空间进行重新整合，整出连续的存储空间。防止出现总存储足够，但连续存储不够而引起的存储请求 fail
+ZeRO-Offload forward 和 backward 计算量高，因此和它们相关的部分，例如参数 W（fp16），activation，就全放入 GPU。
+update 的部分计算量低，因此和它相关的部分，全部放入 CPU 中。例如 W(fp32)，optimizer states（fp32）和 gradients(fp16)等。
+混合精度 Mixed Precision Training
+混合精度训练，指代的是单精度 float（ 3232 bit， 44 个字节）和半精度 float16（ 1212 bit， 22 个字节） 混合。
+半精度 半精度优点：
+内存占用更少： 通用的模型 fp16 占用的内存只需原来的一半：
+模型占用的内存更小，训练的时候可以用更大的 batchsize。 模型训练时，通信量（特别是多卡，或者多机多卡）大幅减少，大幅减少等待时间，加快数据的流通。 计算更快：
+目前的不少 GPU 都有针对 fp16 的计算进行优化。论文指出：在近期的 GPU 中，半精度的计算吞吐量可以是单精度的 2-8 倍； 半精度问题
+数据溢出 Overflow / Underflow：对于深度学习而言，最大的问题在于 Underflow（下溢出），在训练后期，例如激活函数的梯度会非常小， 甚至在梯度乘以学习率后，值会更加小。 舍入误差 Rounding Error 混合精度训练（Mixed Precision 利用 fp16 进行乘法和存储，利用 fp32 来进行加法计算。这样可以减少加法过程中的舍入误差，保证精度不损失
+在模型矩阵乘法的过程中，利用 fp32 来进行矩阵乘法中间的累加(accumulated) 然后再将 fp32 的值转化为 fp16 进行存储。 FP32 权重备份 主要用于解决舍入误差的问题。
+weights, activations, gradients 等数据在训练中都 利用 fp16 来存储
+fp32 额外拷贝一份 weight 会新增加训练时候存储的占用。
+实际训练过程中，内存中占据大部分的基本都是 activations 的值。特别是在 batchsize 很大的情况下， activations 更是特别占据空间。 保存 activiations 主要是为了在 back-propogation 的时候进行计算。因此，只要 activation 的值基本都是使用 fp16 来进行存储的话，则最终模型与 fp32 相比起来， 内存占用也基本能够减半。
+拷贝一份 fp32 的 weights，用于更新。
+在更新权重的时候， weightt=weightt−1+lr∗gradients \\textweight_t= \\text weight_t-1+ \\textlr * \\textgradients ，而在深度模型中， lr∗gradients \\textlr * \\textgradients 往往非常小，如果利用 fp16 来进行相加的话， 则很可能会出现 舍入误差 Rounding Error，导致更新无效。
+通过将 weights 拷贝成 fp32 格式，并且确保整个更新（update）过程在 fp32 格式下进行
+损失放大 Loss Scale 主要用于解决 fp16 underflow 的问题。
+训练到了后期，梯度（特别是激活函数平滑段的梯度）会特别小，fp16 表示容易产生 underflow 现象。
+Loss Scale
+对计算出来的 loss 值进行 scale，由于链式法则的存在，loss 上的 scale 也会作用在梯度上。这样比起对每个梯度进行 scale 更加划算。 scaled 过后的梯度，就会平移到 fp16 有效的展示范围内。
+反向传播前 ，将损失变化（dLoss）手动增大 2k2^k 倍，因此反向传播时得到的中间变量（激活函数梯度）则不会溢出； 反向传播后，将权重梯度缩 2k2^k 倍，恢复正常值。 这样，scaled-gradient 就可以一直使用 fp16 进行存储了。只有在进行更新的时候，才会将 scaled-gradient 转化为 fp32，同时将 scale 抹去。`}).add({id:2,tag:"en",href:"/blogs/flashattention/",title:"FlashAttention",description:"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",content:`Background Structure of GPU Memory 在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 越上层空间越小 但是 速度越快
 HBM：平常主要提到的 GPU memory 通常是指 high bandwidth memory (HBM)
 A100 的 HBM 大概 4040 GB~ 8080 GB， HBM 的bandwidth为 1.51.5 – 2.02.0 TB/s。 SRAM：再往上一层的 memory 称为 SRAM
 总容量 192KB×108192 \\textKB \\times 108 (streaming multi-processors) ， bandwidth 可以达到 1919 TB/s 因此当有运算需要从 HBM 当中不断读写资料的时候，这样的速度差就容易导致 HBM 的读取变成整体效能的 bottleneck。
@@ -161,7 +281,7 @@ Bc×d=O(M)⇔Bc=O(Md) \\beginalign B_c \\times d = O(M) \\Leftrightarrow B_c = O
 Br×d=O(M)⇔Br=O(Md) \\beginalign B_r \\times d = O(M) \\Leftrightarrow B_r = O(\\fracMd) \\endalign 需要将 Sij∈RBr×Bc\\mathbf S_ij \\in R^B_r \\times B_c 放到 SRAM 里，因此
 BrBc=O(M) \\beginalign B_rB_c = O(M) \\endalign 因此设置：
 Bc=O(Md),Br=O(min⁡(Md,MBc))=O(min⁡(Md,d)) \\beginalign B_c &amp;= O(\\fracMd), \\\\ B_r &amp;= O\\bigg(\\min(\\fracMd, \\fracMB_c)\\bigg)= O\\bigg(\\min(\\fracMd , d)\\bigg) \\endalign 因此有：
-Tc=NBc=O(NdM) \\beginalign T_c =\\fracNB_c= O(\\fracNdM) \\endalign 所以： O(NdTc)=O(N2d2)M)O(NdT_c)=O(\\fracN^2d^2)M) Reference FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness`}).add({id:2,tag:"en",href:"/blogs/lsh/",title:"LSH",description:"LSH (Locality-Sensitive Hashing, 局部敏感哈希) 算法",content:`在 Top N 推荐中，我们需要处理的是大量高维度的数据，如何快速地从大量的高维度数据集中找出与某条数据最为接近的一条或多条数据成为了难题。
+Tc=NBc=O(NdM) \\beginalign T_c =\\fracNB_c= O(\\fracNdM) \\endalign 所以： O(NdTc)=O(N2d2)M)O(NdT_c)=O(\\fracN^2d^2)M) Reference FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness`}).add({id:3,tag:"en",href:"/blogs/lsh/",title:"LSH",description:"LSH (Locality-Sensitive Hashing, 局部敏感哈希) 算法",content:`在 Top N 推荐中，我们需要处理的是大量高维度的数据，如何快速地从大量的高维度数据集中找出与某条数据最为接近的一条或多条数据成为了难题。
 如果只是一些小规模的低维度数据集，可以很容易地使用线性搜索来解决问题；但如果我们要在一个庞大的高维度数据集中使用线性搜索来进行匹配，则会消耗很多时间。
 因此，需要采取一些类似于索引的技术来加速查询过程，这些技术通常被统称为 最近邻查找 (Nearest Neighbor, NN) ，而在处理大规模数据时，还可以考虑采用 近似最近邻查找 (Approximate Nearest Neighbor, ANN)。其中一种常用的方法就是局部敏感哈希 (Locality-Sensitive Hashing, LSH)。
 Hash Hash一般翻译做 散列，就是把任意长度的输入（又叫做 预映射， pre-image），通过散列算法，变换成固定长度的输出，该输出就是散列值。
@@ -265,7 +385,7 @@ Pr[h(x)=h(y)]=1−d(x,y) \\mathrmPr\\Big[h(x) = h (y)\\Big] = 1-d(x,y) Jaccard �
 对于 h=[h1,⋯ ,hr]∈H′\\mathbf h = [h_1, \\cdots, h_r ] \\in \\mathcal H&#x27; ， 定义 h(x)=h(y)\\mathbf h(x) = \\mathbf h(y) 当且仅当 hi(x)=hi(y) ∀ i, 1≤i≤rh_i(x) = h_i(y) \\ \\forall \\ i, \\ 1\\le i \\le r （相当于band的长度 rr ）
 【定理】
 如果 H\\mathcal H 是 (d1,d2,p1,p2)(d_1,d_2,p_1,p_2) -sensitive 族，那么 H′\\mathcal H&#x27; 是 (d1,d2,(p1)r,(p2)r)(d_1,d_2,(p_1)^r,(p_2)^r) -sensitive 族
-Reference https://web.stanford.edu/class/cs246/slides/03-lsh.pdf https://web.stanford.edu/class/cs246/slides/04-lsh_theory.pdf 推荐算法学习（十三）：LSH近似最近邻查找`}).add({id:3,tag:"en",href:"/blogs/pythontools/",title:"PythonTools",description:"多种 Python 工具包括其功能、使用方法和示例代码，涵盖了数据处理、界面构建、字符编码检测、终端文本美化等多个方面。",content:`Tools Docstring Parser docstring_parser
+Reference https://web.stanford.edu/class/cs246/slides/03-lsh.pdf https://web.stanford.edu/class/cs246/slides/04-lsh_theory.pdf 推荐算法学习（十三）：LSH近似最近邻查找`}).add({id:4,tag:"en",href:"/blogs/pythontools/",title:"PythonTools",description:"多种 Python 工具包括其功能、使用方法和示例代码，涵盖了数据处理、界面构建、字符编码检测、终端文本美化等多个方面。",content:`Tools Docstring Parser docstring_parser
 docstring_parser将 Python 文档字符串解析。目前支持 ReST、Google、Numpydoc 风格和 Epydoc 风格的文档字符串。
 1 from docstring_parser import parse 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 docstring = parse( &#39;&#39;&#39; Short description Long description spanning multiple lines - First line - Second line - Third line :param name: description 1 :param int priority: description 2 :param str sender: description 3 :raises ValueError: if name is invalid &#39;&#39;&#39; ) 1 2 docstring.long_description # &#39;Long description spanning multiple lines\\n - First line\\n - Second line\\n - Third line&#39; 1 2 docstring.short_description # &#39;Short description&#39; 1 2 3 4 docstring.params # [&lt;docstring_parser.common.DocstringParam at 0x1a67269ea10&gt;, # &lt;docstring_parser.common.DocstringParam at 0x1a67269eb30&gt;, # &lt;docstring_parser.common.DocstringParam at 0x1a67269eb60&gt;] 1 2 3 4 5 6 7 vars(docstring.params[0]) # &#39;args&#39;: [&#39;param&#39;, &#39;name&#39;], # &#39;description&#39;: &#39;description 1&#39;, # &#39;arg_name&#39;: &#39;name&#39;, # &#39;type_name&#39;: None, # &#39;is_optional&#39;: None, # &#39;default&#39;: None 1 2 docstring.params[1].type_name # &#39;int&#39; Ftfy ftfy
 ftfy: fixes text for you。ftfy修复了以各种方式破坏的Unicode。ftfy的目标是接收坏的Unicode并输出好的Unicode，以便在您的Unicode感知代码中使用.
@@ -303,7 +423,7 @@ Fore是针对字体颜色，Back是针对字体背景颜色，Style是针对字�
 Fore: BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET.
 Back: BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET.
 Style: DIM, NORMAL, BRIGHT, RESET_ALL
-1 from colorama import Fore, Back, Style, init 1 2 3 4 5 6 # 初始化，并且设置颜色设置自动恢复 # 如果未设置 autoreset=True，需要使用如下代码重置终端颜色为初始设置 # Fore.RESET # Back.RESET # Style.RESET_ALL init(autoreset=True) 1 2 f&#34;Fore.LIGHTGREEN_EXsome red text&#34; # &#39;\\x1b[92msome red text&#39; 1 2 f&#34;Back.GREENand with a green background&#34; # &#39;\\x1b[42mand with a green background&#39; 1 2 f&#34;Style.DIMand in dim text&#34; # &#39;\\x1b[2mand in dim text&#39;`}).add({id:4,tag:"en",href:"/blogs/python%E5%9F%BA%E7%A1%80/",title:"Python基础",description:"Python基础",content:`赋值、浅 copy、深 copy 赋值：相当于多贴了一个标签（引用），指向同一个对象，引用计数 +1。
+1 from colorama import Fore, Back, Style, init 1 2 3 4 5 6 # 初始化，并且设置颜色设置自动恢复 # 如果未设置 autoreset=True，需要使用如下代码重置终端颜色为初始设置 # Fore.RESET # Back.RESET # Style.RESET_ALL init(autoreset=True) 1 2 f&#34;Fore.LIGHTGREEN_EXsome red text&#34; # &#39;\\x1b[92msome red text&#39; 1 2 f&#34;Back.GREENand with a green background&#34; # &#39;\\x1b[42mand with a green background&#39; 1 2 f&#34;Style.DIMand in dim text&#34; # &#39;\\x1b[2mand in dim text&#39;`}).add({id:5,tag:"en",href:"/blogs/python%E5%9F%BA%E7%A1%80/",title:"Python基础",description:"Python基础",content:`赋值、浅 copy、深 copy 赋值：相当于多贴了一个标签（引用），指向同一个对象，引用计数 +1。
 浅拷贝：会开辟新的内存地址存储 被拷贝对象的外层对象，但是 不拷贝内层的对象，不能算一个完整的拷贝副本。
 深拷贝：会开辟新的内存地址存储被拷贝对象的外层对象，同时 对于内层对象也会递归拷贝，即是一个完整的拷贝副本。
 赋值 不可变对象被重新赋值，重新分配了一块内存，ID 就变了
@@ -487,7 +607,7 @@ asyncio.create_task() 函数用来 并发运行 作为 asyncio 任务 的多个�
 银行家算法：分配资源之前先看清楚，资源分配后是否会导致系统死锁。如果会死锁，则不分配，否则就分配。要求每个进程必须先知道资源的最大需求量，且在系统运行过程中，考察每个进程对各类资源的申请需要花费较多的时间。
 进程间通信方式：
 管道、共享存储器系统、消息传递系统、信号量
-mutex 是互斥锁`}).add({id:5,tag:"en",href:"/blog/quick_start/",title:"QuickStart",description:"This is QuickStart.",content:`在 quickstart 目录中为您的项目创建目录结构。
+mutex 是互斥锁`}).add({id:6,tag:"en",href:"/blog/quick_start/",title:"QuickStart",description:"This is QuickStart.",content:`在 quickstart 目录中为您的项目创建目录结构。
 添加内容 向您的网站添加一个新页面。
 1 hugo new content/posts/my-first-post.md 启动 Hugo 的开发服务器以查看网站
 1 hugo server -D Mathematics in Markdown Step Step 1 在 hugo.toml 文件中配置
@@ -500,7 +620,7 @@ layouts/_default/baseof.html
 更新 layouts/_default/_markup/render-passthrough.html 文件
 修改 render-passthrough.html 文件中的渲染逻辑，区分 inline 和 display 数学公式，并根据类型应用适当的 MathJax 渲染方式。
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26  $opts := dict   if eq .Type &#34;block&#34;   $opts = dict &#34;displayMode&#34; true   end   with try (transform.ToMath .Inner $opts)   with .Err   errorf &#34;Failed to render MathJax: %q. See %s&#34; . $.Position   else   $rendered := .Value  &lt;!-- 区分 inline 和 display --&gt;  if $opts.displayMode  &lt;!-- 块级公式，MathJax 渲染 --&gt; &lt;div class=&#34;mathjax-display&#34;&gt;  $rendered  &lt;/div&gt;  else  &lt;!-- 行内公式，MathJax 渲染 --&gt; &lt;span class=&#34;mathjax-inline&#34;&gt;  $rendered  &lt;/span&gt;  end   end   end  修改 assets/scss/components/_math.scss
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 // 行内数学公式样式 .mathjax-inline  display: inline-block; // 保持在同一行 font-size: 100%; // 适中字体大小 vertical-align: middle; // 垂直居中 padding: 0.2em 0.4em; // 给公式添加内边距，让公式更显眼 margin: 0; // 不增加外边距 color: $primary; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式，确保易读性  // 块级数学公式样式 .mathjax-display  display: block; // 占据整行 font-size: 100%; margin: 20px 0; // 上下外边距，增加间距 padding: 0.5em; // 给公式增加一些内边距 text-align: center; // 居中显示公式 color: #1a73e8; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式 border: 1px solid #e0e0e0; // 为块级公式添加边框，增加区分度 border-radius: 8px; // 圆角效果 background-color: #f4f6f9; // 背景色，使块级公式更加显眼 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // 阴影效果，提升层次感`}).add({id:6,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 // 行内数学公式样式 .mathjax-inline  display: inline-block; // 保持在同一行 font-size: 100%; // 适中字体大小 vertical-align: middle; // 垂直居中 padding: 0.2em 0.4em; // 给公式添加内边距，让公式更显眼 margin: 0; // 不增加外边距 color: $primary; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式，确保易读性  // 块级数学公式样式 .mathjax-display  display: block; // 占据整行 font-size: 100%; margin: 20px 0; // 上下外边距，增加间距 padding: 0.5em; // 给公式增加一些内边距 text-align: center; // 居中显示公式 color: #1a73e8; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式 border: 1px solid #e0e0e0; // 为块级公式添加边框，增加区分度 border-radius: 8px; // 圆角效果 background-color: #f4f6f9; // 背景色，使块级公式更加显眼 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // 阴影效果，提升层次感`}).add({id:7,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
 绝对位置编码：位置索引 直接进行编码。一般都是直接构建 词嵌入向量 和 位置嵌入向量 直接相加。
 Transformer 中的 Sinusoidal 位置编码
 BERT 和 GPT 中的 训练式位置编码
@@ -642,7 +762,747 @@ fb(m)=∑i=0d/2−1cos⁡mb−2i/d≈∫01cos⁡mb−sds=令t=mb−s∫mb−1mco
 fb(m)≈Ci(m)−Ci(mb−1)ln⁡b \\beginequationf_b(m) \\approx \\frac\\textCi(m) - \\textCi(mb^-1)\\ln b\\endequation Ci(x)\\textCi(x) 的第一个零点 x0=0.6165⋯x_0=0.6165\\cdots 对于 m≥1m \\ge 1 ， ∣Ci(m)∣≤1/2|\\textCi(m)|\\leq 1/2 ，可以忽略
 考虑 Ci(mb−1)≤0m∈0,1,2,⋯ ,L−1\\textCi(mb^-1)\\leq 0 \\quad m\\in\\0,1,2,\\cdots,L-1\\ ，因此需要 mb−1∈[0,x0]⟹b≥mx0mb^-1 \\in [0,x_0] \\Longrightarrow b\\ge \\fracmx_0 ，即
 b≥Lx0≈2L b\\ge \\fracLx_0 \\approx 2L 这个结果比精确的数值结果要小，因为它对应于 d→∞d \\rightarrow \\infin ，无限个三角函数叠加会使得函数图像的震荡更少，看起来更加平稳（相比于有限的 dd ），从而对于固定的 bb ， fb(m)f_b(m) 的连续非负区间更长，或者反过来，对于固定的 LL ，保持 m=0,1,2,⋯ ,L−1m=0,1,2,\\cdots,L-1 的 fb(m)f_b(m) 都非负的 bb 更小。
-Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:7,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
+Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:8,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
+查询建议（SUG）：用户点击搜索之前，搜索引擎会给出的相关词，如用户输入“深度学习”，SUG 可能为“深度学习框架”、“深度学习教程”等等。
+作用是让搜索引擎用起来更方便。
+文档：搜索结果，如网页链接（Google、百度）、商品（Amazon、淘宝）、视频（YouTube、B 站）
+搜索结果页：搜索完成的整个界面。
+搜索结果页的主体为文档，会有首图、标题、摘要等预览
+标签/筛选项：搜索结果页中包含的信息，如最新（按时间）、最热（按点击&amp;交互次数）、视频。
+文档单列曝光： 搜索结果页每行只有一篇文档（Google、百度、YouTube）
+文档双列曝光： 搜索结果页每行有两篇文档（淘宝、京东、小红书），两者只是产品形态的差异，后台的搜索引擎算法和工程架构差不多
+曝光 &amp; 点击 搜索引擎考虑两类点击率：文档、查询词
+曝光： 用户在搜索结果页上看到文档，就算曝光。
+如屏幕上最多展示 33 篇文档，假如用户搜索之后不往下滑，那么只有前 33 篇文档获得曝光。
+文档点击：在曝光之后，用户点击文档，进入文档详情页。
+文档点击率：
+文档点击总次数 / 文档曝光总次数（独立看待每篇文档的点击） 10%10 \\% 垂搜 &amp; 通搜 垂直搜索（垂搜）：针对某一个行业的搜索引擎
+通用搜索（通搜）：覆盖面广，不限于一个领域
+垂直搜索 电商搜索：Amazon、淘宝、京东、拼多多
+学术搜索：Google Scholar、知网
+本地生活搜索：Yelp、大众点评、美团、饿了么
+酒店机票搜索：Booking、美团、携程、东航
+租售房搜索：Zillow、Redfin、Airbnb、贝壳
+招聘搜索：LinkedIn、脉脉、Boss 直聘
+特点：
+垂搜的文档普遍是结构化的，容易根据文档属性标签做检索筛选:
+电商：商品，可以限定品牌、卖家、价格、颜色
+学术：论文，可以限定关键词、作者、期刊、年份
+本地生活：店铺，可以限定类目、商圈、距离
+垂搜用户的意图明确
+大众点评用户搜索“寿司”，目的是找寿司餐厅。
+淘宝用户搜索“拳击”，目的是找拳击相关的商品。
+通用搜索 谷歌、百度、必应、抖音（抖音可以自动判断查询词的意图，找视频/用户/商品/直播/本地生活的店铺）
+特点：
+文档来源广，覆盖面大（网页、视频、图片、商品、直播、店铺）
+没有结构化，检索难度大（需要搜索引擎自己做网页分析抽取信息）
+用户使用通搜的目的各不相同，较难判断用户意图
+搜索引擎的用户满意度 【业界共识】影响用户满意度的三大因素：
+相关性：查询词和文档在语义上有多相关
+内容质量：分为 EAT、文本质量、图片质量等几类，每一类都有多种分数
+时效性：意图分为突发时效性、一般时效性、周期时效性
+【移动互联网时代】
+个性化：反映在预估点击率、交互率上
+地域性
+相关性（Relevance） 相关性 是 查询词 qq 与 文档 dd 两者的关系
+相关性是客观标准，不取决于用户 uu ，无个性化。(如果大多数有背景知识的人认为 (q,d)(q,d) 相关，则判定为相关。
+相关性是语义上的，不是字面上的。相关是指 dd 能满足 qq 的需求 或 回答 qq 提出的问题
+查询词 qq 可能有多重意图。只要 dd 命中 qq 的一种主要意图，则 (q,d)(q,d) 算相关
+召回、粗排、精排均需要计算相关性。
+召回海选阶段: 候选文档量级为数万，使用 文本匹配分数（如 tf-idf、类目匹配分数等）或 双塔 BERT 模型 粗略地估计相关性。
+粗排阶段：候选文档量级为数千，使用 双塔 BERT 模型（推理代价小） 或 浅层交叉 BERT 模型 计算相关性。
+精排阶段：候选文档量级为数百，使用 交叉 BERT 模型（通常 44 层）计算相关性。
+内容质量 内容质量不是一个分数，而是很多分数，会在搜索排序中用到
+EAT：专业性、权威性、可信赖，针对作者和网站（对金钱、健康类的查询词尤为重要。）
+文本质量：文字质量、文章意图、标题党这样的负面信号，针对文档本身。
+图片质量（或视频质量）：分辨率、有无水印、是不是截图、图片是否清晰、图片的美学……
+EAT EAT（又被称为权威性）：针对网站和作者，是谷歌提出的内容质量评价标准
+专业性（Expertise）：作者有专业资质，比如医生、记者等。
+权威性（Authoritativeness）：作者、网站在领域内有影响力，不会被用户质疑。
+可信赖（Trustworthiness）：作者、网站的名声好坏。
+对于 your money or your life 方面（金钱、健康类）的查询词，EAT 是排序的重要因子
+Your money：
+金融理财（保险、投资、报税、贷款、转账）
+电商、购物
+Your life：
+医疗健康（诊断建议、用药建议、医院介绍、减肥）
+法律等严肃的主题（诉讼、移民、选举、离婚、收养）
+对人生有重大影响的主题（高考、择校、出国、就业）
+文本质量 文本质量：针对文档本身。
+文字的质量：文章写得好不好？
+文章的价值：文章是否清晰、全面，事实是否准确，信息是否有用
+作者的态度和水平：写作是否认真，写作的专业程度，写作的技巧
+宠物饲养：解释清楚、事实正确，对读者有价值。
+笑话：好笑。
+影评：清晰丶全面丶公正、深刻
+文章的意图：有益、有害？
+有益：分享有用的知识、攻略、亲身经历
+有害：虚假信息、软广、散布仇恨、男女对立、发泄情绪
+负向信号：标题党、图文不一致、虚假引流标签、堆砌关键词……对于每个文本质量分数，都有一个专门训练的模型：
+文本质量不是一个分数，而是很多个分数，在搜索排序中起作用。
+对于每个文本质量分数，都有一个专门训练的模型
+模型：BERT 等 NLP 模型、CLIP 等多模态模型。（预训练后再用人工标注的数据做 finetune）
+数据：制定分档规则，然后人工标注
+文本质量分数都是静态的，只需计算一次。在文档发布或被检索时，用模型打分，分数存入文档画像（搜索排序时直接读取文档画像）
+时效性 文档的年龄（从文档发布/更新到现在过了多久）在排序中起多大作用？
+时效性强需求：query = “最新房贷政策”、“美元汇率”
+有时效性需求但不强：query = “泰国旅游”、“新荣记探店”
+无时效性需求：query = “搞笑萌宠”、“宝宝湿疹”
+决于查询词，查询词对时效的需求越强，文档年龄的权重就越大
+优化搜索时效性的关键是 识别查询词的时效性意图，即查询词对“新”的需求，即卡文档年龄
+分类：
+突发时效性
+一般时效性（强/中/弱/无）
+周期时效性
+识别方法：
+数据挖掘
+语义模型
+突发时效性 查询词涉及突发的新闻、热点事件。
+如果查询词带有突发时效性，那么用户想看最近发布的文档
+&quot; 阿根廷足球”有没有突发时效性？
+&quot; 王力宏”有没有突发时效性？
+识别方法：以数据挖掘为主
+挖掘站内搜索量激增的查询词(明星八卦)
+挖掘站内发布量激增的关键词（抖音小红书）
+爬取其他网站的热词
+为什么不能用 BERT 等自然语言模型？
+人擅长判断文字质量、相关性，BERT 也擅长
+如果不借助新闻媒体，人无法判断突发时效性
+一般时效性 只看查询词字面就可以判断时效性意图的强弱，（无需知道近期是否有大新闻）
+按需求强度分为 44 档：强、中、弱、无
+【例】 (从强到弱) 某品牌羊毛、黄金价格、上海楼市新闻、在美国更新中国护照、单反相机测评、苏联笑话、82 版射雕
+识别方法：BERT 等语义模型
+周期时效性 在每年特定时间表现为突发时效性，在其他时间表现为无时效性。
+【例】双十一、春晚小品、高考作文、奥斯卡
+识别方法：
+可以不做任何处理。 当查询词表现出突发时效性时，会被算法挖掘到。
+可以通过人工标注、数据挖掘 识别周期时效性查询词。
+个性化 考虑到不同用户有不同偏好，搜索引擎可以根据用户特征做排序（类似推荐系统）。
+衡量用户对文档的偏好：
+预估点击率
+交互率
+为什么需要个性化和点击率模型？
+查询词越宽泛（例如“头像”），就越需要个性化排序
+宽泛的查询词（例如“头像”）相关的文档数量巨大，其中小部分是用户感兴趣的。
+精准的查询词（例如“权力的游戏龙妈头像”）不需要个性化。
+预估点击率和交互率有利于提升相关性和内容质量
+相关且高质量的文档更容易被点击、点赞、收藏、转发。
+与 BERT 等语义模型互补，解决 bad case。
+即便是非个性化排序，也会用模型预估点击率和交互率（从另一个角度反映出相关性和内容质量），有助于提升排序效果。
+【思考题】
+PageRank：根据网页之间的链接关系给网页打分。如果很多重要网站的页面指向网页 xx ，则认为网页 xx 也重要。
+【问题】：PageRank 属于搜索排序用到的哪一类因子? B
+A.相关性	B． 权威性 (EAT)	C． 文本质量	D． 时效性	E． 个性化
+搜索引擎的评价指标 北极星指标（也叫核心指标）
+用户规模、留存率（用户更多更活跃）
+单个策略不容易提升规模和留存
+对于某些垂类搜索引擎北极星指标可能有区别，如电商搜索，还包括商品交易总额等
+中间指标（与北极星指标正相关）
+用户的点击等行为，反映搜索质量的好坏
+做 A/B 测试，中间指标很容易显著
+人工体验评估
+人工评估搜索体验，让标注员评估搜索结果好坏
+考察 GSB、DCG 等指标
+北极星指标：用户规模&amp;留存 用户规模 日活用户数（Daily Active User，DAU），或 月活用户数（Monthly Active User，MAU）
+日活用户数：
+搜索日活（Search DAU）
+推荐日活（Feed DAU）
+搜索渗透率
+搜索渗透率 = Search DAU / APP 总体 DAU。
+搜索体验越好，用户越喜欢用搜索功能，搜索渗透率越高
+提升搜索日活、搜索渗透率的方法：
+搜索的体验优化，可以提升搜索留存，从而提升搜索日活。
+产品设计的改动，从推荐等渠道向搜索导流，推荐的用户更频繁地用搜索，提升搜索渗透率，从而提升搜索日活。
+用户留存 次 77 留: APP 的次 77 日内留存
+【例】
+Feb 1 有 11 亿用户使用 APP。
+这 11 亿人中，有 88 千万在 Feb 2~8 使用 APP 至少 11 次。
+Feb 1 的 次 77 留 = 8 千万/1 亿=80%\\text8 千万 / \\text1 亿 = 80\\% 。
+常用的留存指标：
+次 11 留
+次 77 留
+次 3030 留
+次 nn 留随 nn 单调递增： 次1留≤次7留≤次30留\\text次1留 \\le \\text次7留 \\le \\text次30留 把 APP 多个功能单独拆出看留存指标：
+APP 总体次 nn 留
+搜索次 nn 留
+推荐次 nn 留
+现在更流行 LT7 和 LT30 留存指标。原因：LT 是加和，次 NN 留是 OR，加和波动更小，更容易显著。
+中间指标 用户的点击等行为、规模和留存指标未必适合评价单个策略。
+单个策略很难显著提升规模和留存（很难达到统计显著性）。即便能达到，规模和留存指标也需要很长时间才能显著（不利于快速迭代模型和策略）。
+规模和留存指标更适合作为大盘长期指标观察，评估整个团队长期的表现（所有策略叠加）。
+长期优化搜索体验，规模和留存会稳定提升，反映在 AB 测试的 holdout 上。
+中间指标：与规模和留存强关联，且容易在 AB 测试中显著。
+点击率&amp;有点比 文档点击率：搜索结果页上文档被用户看到，算作曝光。（通常是 10%10\\% ）
+文档点击率 = 总点击数 / 总曝光数
+有点比（查询词点击率）： 搜索结果页上，用户点击任意一篇文档，则本次搜索算有点击（是否找到至少一篇用户需要的文档）。（通常是 70%70\\% ）
+有点比 = 有点击的搜索次数 / 总搜索次数
+首屏有点比：仅当点击发生在首屏，本次搜索算有点击（考察排序的效果，是否把用户需要的文档排在首屏）
+首屏有点比 ≤\\le 有点比
+3 个指标关联很强，一个指标提升会造成其它指标的提升：
+改进 排序策略 通常会同时提升以上三种指标
+改进 召回策略 可以提升 文档点击率 和 有点比（因为首屏的几篇文档主要由排序决定）
+首点位置 用户需要的文档排名是否靠前。
+平均首点位置：
+一次搜索之后，记录第一次点击发生的位置
+如果没有点击，或者首点位置大于阈值 xx ，则首点位置取 xx 对所有搜索的首点位置取平均。
+平均首点位置越小越好：平均首点位置小，说明符合用户需求的文档排名靠前，用户体验好。
+优化搜索排序，通常会同时改善 有点比、首屏有点比、平均首点位置，三者与留存指标强相关。
+主动换词率 如果用户搜到需要的文档，通常不会换查询词。
+【例】
+女性用户搜 “机械键盘”，结果大多是黑色的，不符合用户喜好，个性化差，用户会换词为 “机械键盘 女性” 搜 “权利的游戏”，搜索引擎没能自动纠错，搜到的文档很少、质量不好，用户会换词为 “权力的游戏” 换词的判定
+一定时间间隔内，搜的两个查询词相似（比如编辑距离小），则被认定为换词。
+主动换词 vs 被动换词：
+主动换词：原因是没找到满意的结果，说明搜索结果不好。
+被动换词（说明搜索引擎很智能）：比如搜索建议“您是不是想搜权力的游戏”，用户点击建议。
+交互指标 用户点击文档进入详情页，可能会点赞、收藏、转发、关注、评论。
+交互通常表明用户对文档非常感兴趣（强度大于点击），因此可以作为中间指标（类似于有点比、首点位置、换词率）
+缺点
+交互行为稀疏（每百次点击，只有 10 次点赞、2 次收藏），单个交互率波动很大，且在 AB 测试中不容易显著。
+解决
+取各种交互率的加权和作为总体交互指标，权重取决于交互率与留存的关联强弱。
+中间目标 -&gt; 留存目标： 体验优化的策略往往同时改善多种中间指标：有点比、首屏有点比、平均首点位置、主动换词率、交互指标（短期内 A/B test 就会显著）
+单个体验优化的策略很难在短期内显著提升留存指标（通常微弱上涨，不具有统计显著性）。只要中间指标普遍正向，实验就可以推全。
+上述中间指标与留存有很强的关联，长期持续改善中间指标，留存指标会稳定上涨。
+人工体验评估 Side by Side 评估 判断新旧两种策略谁的结果更好
+【步骤】
+随机抽一批搜索日志，取其中查询词、用户画像、场景。运行新旧两种策略，得到两个搜索结果页（文档列表，标注员可以看到标题、摘要、首图等信息）。
+固定查询词、用户、场景（时间、地点、手机型号等），搜索结果的差异只来自于策略。
+随机抽样搜索日志时，非均匀抽样（否则高频查询词太多），需要覆盖高频、中频、低频查询词。
+对于一条查询词，人工评估两个列表，分别对应新旧两种策略。
+基于查询词、用户画像、搜索场景，判断左右两个列表谁更好。
+盲评，即新策略出现在左、右的概率都是 50%50\\% 。
+不是判断具体哪篇文档更好，而是判断哪个列表整体更好。
+【评价指标】
+使用 GSB(Good Same Bad）作为评价指标：
+如果新策略更优，记作 Good（G）
+如果两者持平，记作 Same（S）
+如果旧策略更优，记作 Bad（B）
+【例】：评 300 条查询词，GSB 为 50:220:3050:220:30 ， G&gt;BG &gt; B ，新策略更好
+月度评估 【步骤】
+每个月随机抽取一批搜索日志（用户实际看到的搜索结果），每条搜索日志包含查询词 qq 、用户 uu 、场景 cc 、排名前 kk 的文档 d1,⋯ ,dkd_1, \\cdots ,d_k 。
+随机抽样搜索日志时，非均匀抽样，比例固定，需要覆盖高频、中频、低频查询词。
+文档数量 kk 取决于平均下滑深度（用户平均浏览结果页的前 kk 篇文档），比如 k=20k=20 。
+标注员评估每一篇文档，打分 score(q,u,c,di)\\textscore(q, u, c, d_i) ，越大说明文档 did_i 越好
+可以单独给相关性、内容质量、时效性打分 (每个维度单独评分)。
+可以只打一个综合满意度分数（有具体的分档方法）
+【评价指标】
+DCG@k=∑i=1kscore(q,u,c,di)log⁡2(i+1). \\mathrmDCG@k =\\sum_i = 1^k\\frac\\mathrmscore(q, u, c, d_i)\\log_2(i+1). DCG 评价的不是单独文档，而是搜索结果页整体好坏
+score(q,u,c,di)\\mathrmscore(q,u,c,d_i) ：标注员评分，越大说明文档 did_i 越好。
+log⁡2(i+1)\\log_2(i+1) ：加权，文档排名越靠后，这篇文档对用户体验的影响越小，权重越低。
+对月度所有搜索日志，取 DCG 的均值，作为月度评估的结果
+可以是自我对比，是否优于往期的 DCG
+可以与竞对对比，是否优于竞对的 DCG
+总结 北极星指标：用户规模真&amp;留存
+用户规模：
+APP 总体的 DAU、搜索的 DAU
+搜索渗透率（Search DAU／APP DAU)
+（百度不看搜索渗透率，看推荐渗透率，因为其主要功能是搜索，搜索渗透率接近 100%100\\% ）
+用户留存：
+次 11 留、次 77 留、次 3030 留。
+LT7、LT30 （目前更流行）
+APP 总体的留存、搜索自身的留存。
+规模和留存指标未必适合评价单个策略。
+单个策略很难显著提升规模和留存。
+规模和留存指标需要很长时间才能显著。
+规模和留存指标更适合作为大盘长期指标观察。
+评估整个团队长期的表现（所有策略叠加）。
+长期优化搜索体验，规模和留存会稳定提升，反映在 A/B 测试的 holdout 上。
+中间指标：用户的点击等行为
+中间指标：与规模和留存强关联，且容易在 A/B 测试中显著
+有点比：是否找到至少一篇用户需要的文档。
+首屏有点比：是否把用户需要的文档排在首屏。(考察排序效果)（越高越好）
+首点位置：用户需要的文档排名是否靠前。(考察排序效果)（越小越好）
+主动换词率：没搜到用户需要的文档，用户会换词重搜。（越小越好）
+交互率：文档是用户非常需要的’那么用户会点赞丶收藏转发、关注·····
+人工体验评估
+Side by side 评估：以 GSB 作为评价指标，对比新旧两种策略，决策新策略是否可以推全。
+缺点
+评估过于主观，评估标准未必与普通用户体验一致。
+每次仅评价几百个搜索结果页，结果噪声大，稳定性不如 AB 测试（AB 测试虽然单次结果很随机，但样本量大，统计意义上可靠）。
+速度慢于 AB 测试，影响开发迭代效率。
+人工成本比较贵。
+不适合强个性化搜索引擎，个性化较难处理，仅凭用户画像难以判断用户真实需求。
+月度评估：以 平均 DCG 作为评价指标，与自己往期做对比，与竞对做对比，判断搜索团队整体水平。
+Side by side 和月度评估的区别：
+目的不同：前者决策新策略是否推全，后者判断搜索团队整体水平（不是单个策略）。
+指标不同：前者的指标是 GSB，后者的指标是 DCG。
+有无争议：前者充满争议，后者没有缺点和争议 。
+【思考题】
+【问题】：用于评价用户体验，整个搜索引擎的日均搜索次数是好的指标吗？
+【提示】：
+是好的商业目标，它与广告收入正相关。
+可以用来对比新旧策略的用户体验吗?
+日均搜索次数 = DAU × 人均搜索次数。
+人均搜索次数与换词率的关系是什么?
+DAU 增长是好事，但人均搜索次数增长不一定是好事，不代表用户体验变好
+搜索引擎的链路 查询词处理：分词、词权重、类目识别、意图识别、查询词改写等多个功能模块，后面召回和排序会使用查询词处理的结果。
+召回：从海量文档中找出几万篇与查询词相关的文档，二三十条召回通道同时运行，各自有一些配额。召回结束后，会用规则或简单模型做个初步筛选，把文档数量降低到几千，再送去排序服务器。
+排序：决定搜索结果页上文档展示的顺序。需要计算相关性、点击率、内容质量、时效性等很多分数，然后用规则或模型融合这些分数，给出最终的排序。
+推荐系统排序 主要靠预估点击率和交互率。
+搜索引擎排序 中的预估点击率和交互率是个性化分数，此外还需要相关性、时效性、内容质量等分数综合，其中相关性最重要。
+查询词处理 只要有 分词 就能做文本召回，如果用向量召回甚至连分词都不需要；
+除分词之外的其他功能（词权重、类目识别、意图识别、改写 等）都是为了用搜索引擎效果更好，而非必不可少。
+查询词处理的 缓存，如果查询词命中缓存，就直接读取缓存中的查询词处理结果，不需要调用各个服务做计算。对于通用搜索引擎，几百万个 高频查询词就能覆盖每天大部分的搜索请求。
+分词（Tokenization） 中文搜索引擎必不可少，主要给文本召回使用（文本召回必须要把查询词切成多个较短的 term）
+【例】：冬季卫衣推荐 —&gt; 冬季/卫衣/推荐
+为什么需要做分词？
+文本召回根据词（term）在倒排索引中检索文档。
+倒排索引的 key 大多是“冬季”、“卫衣”、“推荐”这样的常用词，数量不大。
+假如倒排索引的 key 是“冬季卫衣推荐”这样的词，倒排索引会过于巨大（工程上的困难）。
+词权重（Term Weight） 非必要但有用
+【例】：冬季卫衣推荐 —&gt; 冬季/卫衣/推荐
+词权重：卫衣 &gt; 冬季 &gt; 推荐。
+丢弃“卫衣”，搜索“冬季推荐 &quot; （绝对不能丢弃）
+丢弃“冬季”，搜索“卫衣推荐 &quot; （若丢弃对搜索结果有较大影响）
+丢弃“推荐”，搜索“冬季卫衣” （若丢弃，查询词语义基本不变，没有影响）
+为什么要计算词权重（Term Weight）？
+如果查询词太长，没有文档可以同时包含其中所有词，文本召回找不到用户想要的文档，需要丢弃不重要的词（告诉文本召回哪些 term 不重要，可以丢弃）
+召回结束之后需要用简单的规则或模型计算相关性，对文档做个初步筛选。计算查询词与文档的相关性时，可以用词权重做加权
+类目识别 每个平台都有各自的 多级类目体系(一个平台可能有几十个一级类目，几百个二级类目，甚至会细分出三级类目)。
+一级类目：美妆
+二级类目：彩妆、护肤、美甲、香水、医美
+用 NLP 技术识别文档、查询词的类目（多标签分类问题），一篇文档/查询词可能同时属于多个类目。
+文档类目识别：在文档发布（或被爬虫获取到）时，离线 识别文档类目。
+查询词类目识别：在用户做搜索时，在线 识别查询词类目。
+类目识别的作用：召回模型、排序模型将文档、查询词类目作为特征。
+查询词意图识别 一条查询词可以同时带有多种意图。
+时效性意图：查询词对文档“新”的需求，召回和排序均需要 考虑文档的年龄。
+【例】：
+新款电动车测评：一般时效性意图
+热点新闻：突发时效性意图
+地域性意图：召回和排序不止需要文本相关性，还需要结合用户定位地点、查询词提及地点、文档定位地点。
+【例】：附近的美食
+用户名意图：用户想要找平台中的某位用户，应当检索用户名库，而非检索文档库。
+求购意图：用户可能想要买商品，同时在文档库、商品库中检索。
+查询词改写 技术难度最大。
+用户输入查询词 qq ，算法将其改写成多个查询词 q1′,⋯ ,qk′ q_1^\\prime,\\cdots,q_k^\\prime 。（独立用 q,q1′,⋯ ,qk′q, q_1^\\prime,\\cdots,q_k^\\prime 做召回，对召回的文档取并集。）
+查询词改写有什么用？
+解决语义匹配、但文本不匹配的问题（文本召回只能做字面上的匹配)。
+【例】：
+qq = “LV包”
+dd = “推荐几款 LOUIS VUITTON 包包”
+qq 和 dd 语义相关，但文本召回无法用 qq 检索到 dd 解决召回文档数量过少的问题。
+qq 不规范表达，或 qq 过长，导致召回结果很少。
+【例】：
+老谋子拍的电影 = 张艺谋的电影
+身高 160 体重 120 年龄 20 女穿搭 = 微胖女大学生穿搭
+召回（Information Retrieval） 给定查询词 qq ，从文档库（数亿篇文档）中快速检索数万篇可能与 qq 相关的文档 d\\d\\ 文本召回（即文本匹配，最传统的方法）：借助倒排索引，匹配 qq 中的词和 dd 中的词.
+向量召回（双塔召回）：用BERT这样的深度学习技术，将 qq 和 dd 分别表征为向量 xqx_q 和 zdz_d 。给定查询词向量 xqx_q ，在向量数据库中做ANN查找，召回相似度高的文档 zdz_d 。
+KV召回（离线构造的KV索引，用于高频查询词的召回）：对于高频查询 qq ，离线建立 q→List⟨d⟩q \\rightarrow \\textList \\langle d \\rangle 这样的 key-value索引。线上直接读取索引，获取 qq 相关的文档。
+文本召回 借助倒排索引
+离线处理文档，建立倒排索引(key是term， value是文档)。（给定词 tt (term)，可以快速找到所有包含 tt 的文档）
+给定查询词 qq ，做分词得到多个词 t1,⋯ ,tkt_1, \\cdots, t_k 对。
+于每个词 tit_i ，检索倒排索引，得到文档的集合 Di\\mathcalD_i , 这些文档全都包含 tit_i 。
+求 kk 个集合的交集 D1∩⋯∩Dk\\mathcalD_1 \\cap \\cdots \\cap \\mathcalD_k ，作为文本召回的结果。
+交集可能很小甚至为空，因此需要对 qq 做丢词、改写。
+向量召回 双塔模型
+借助深度学习技术，把查询词和文档表征为向量，计算两个向量的内积或余弦相似度。
+训练模型时，用预测点击或者相关性作为预测目标。
+文档的预测表征：预先计算好，存储于向量数据库。
+查询词的向量表征：实时计算（查询词很短，推理代价不大）。
+在线上做召回时，给定查询词的向量表征，在向量数据库中做 ANN 查找, 找到相似度最高的一批文档作为召回结果。
+KV召回 作为补充
+key：用户真实搜过的查询词，在过去一段时间被搜的次数高于某个阈值。
+value：文档列表，每个查询词都对应很多篇文档，由于离线做过筛选，这些文档与查询词都有高相关性。
+排序（Ranking） 搜索排序需要多个模型计算多个分数
+排序的依据 影响用户满意度的因素
+相关性（主要决定因素）：查询词和文档之间的关系，重要性最高，在线上用BERT模型（4/6/12层都有，取决于算力）实时计算查询词和文档的相关性。
+内容质量：指文档的文本和图片质量、以及作者或者网站的EAT。算法离线分析文档的内容质量（在文档发布或被爬虫检索到时，算法就会计算文档的内容质量，得到很多分数），把多个分数写到文档画像中。
+时效性：主要指查询词对“新”的需求。查询词处理分析时效性，把结果传递给排序服务器，如果查询词有时效性需求，那么文档年龄会成为排序的主要因素之一。
+个性化：在不同的搜索引擎中，个性化的重要性各不相同(小红书看重个性化，个性化对百度的重要性片偏低（无登录）)。在线上用多目标神经网络预估点击率和交互率。（与推荐系统几乎相同）
+【思考题】
+【问题】：搜索引擎的时效性很差，该从哪些方面改进？
+【提示】：查询词处理、召回、排序分别能做什么？
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:9,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
+制定标注规则→标注数据 → 训练模型→线上推理 \\text制定标注规则 \\rightarrow \\text标注数据  \\rightarrow \\text 训练模型 \\rightarrow \\text线上推理  搜索产品和搜索算法团队定义相关性标注规则。
+人为将 (q,d)(q,d) 的相关性划分为 44 个或 55 个（如百度）档位。后以 44 个为例。
+相关性分档规则非常重要，假如日后有大幅变动，需要重新标注数据，丢弃积累的数据。
+产品和算法团队监督指导标注团队的工作，累积数十万、数百万条 (q,d)(q,d) 样本。
+算法团队用人工标注的数据训练相关性模型。
+相关 V.S. 不相关 字面匹配 vs 需求匹配 相关性不是字面上的匹配，而是需求匹配。
+相关性是指 dd 能满足 qq 的需求或回答 qq 提出的问题。
+哪怕 qq 和 dd 字面上完全不匹配，两者也可以被判定为相关。
+qq = 谁掌握芯片制造的尖端技术
+dd = 全球最先进的光刻机都由荷兰 ASML 公司制造
+即便 qq 和 dd 字面匹配，两者也可能不相关。
+qq = 巴伦西亚旅游
+dd = 我去巴伦西亚旅游，吃到了最好最正宗的西班牙海鲜饭，回来研究了一番，这个视频给大家介绍西班牙海鲜饭的做法···
+相关性标注只考虑相关性 相关性标注的重点问题：相关性标注只考虑相关性，不考虑内容质量、时效性等因素。
+满足相关性，但内容质量低，OK
+qq = 什么药物可以治愈新冠？
+dd = 一则虚假广告，声称某种草药可以治愈新冠，并用阴阳调和原理解释该草药克制新冠病毒
+满足相关性，但时效性低，OK
+qq = 上海落户政策
+dd = 一篇过时的文章，介绍 2015 年的上海落户政策。
+相关性数据训练的模型只负责判断相关性 （内容质量/时效性由别的模型判别）
+多意图 查询词 qq 可能有多种意图，文档 dd 只需命中一种意图就算相关
+【例】
+黑寡妇：黑寡妇蜘蛛、漫威电影黑寡妇角色、车臣黑寡妇组织。
+用户搜 =“黑寡妇”，不论用户的意图是什么，黑寡妇蜘蛛黑寡妇角色、黑寡妇组织的文档都满足相关性。
+越短的查询词就越可能有多意图。
+若没有命中用户的真实意图，是个性化的问题，搜索引擎没有根据用户画像做好查询词理解和排序。
+上位词&amp;下位词 下位词∈上位词\\text下位词 \\in \\text上位词 搜上位词，出下位词，判定为 相关。
+搜 qq =“广东菜”，出 dd = “潮汕美食”。
+搜 qq =“红色口红”，出 dd = “玫红色口红”
+搜下位词，出上位词，通常判定为 不相关。
+搜 qq = “潮汕美食”，出 dd =“经典广东菜’
+搜 qq = “玫红色口红”，出 dd =“红色口红”
+丢词的判定 丢词即文档不能完全满足查询词的需求，丢失了一部分需求。
+丢弃 核心词，判定为不相关
+搜 qq =“情人节餐厅”，出 dd = “情人节礼物”。
+搜 qq =“黄晓明”，出 dd =“杨颖拍过的电影”。
+丢失 重要限定词（主观性较强），判定为不相关。
+搜 qq = “初二物理考点”，出 dd = “初三物理考点”。 搜 qq = “黄石公园春季旅游”，出 dd = “黄石公园秋季旅游 &ldquo;。 丢失 不重要限定词，判定为相关
+搜 qq =“精彩的好莱坞动作片”，出 dd = “好莱坞动作片 top 10”。
+搜 qq = “东南亚十大旅游景点”，出 dd = “东南亚热门旅游景点”。
+具体要看 dd 能否满足 qq 的主要需求或回答 qq 提出的问题。
+总结 相关性是指 dd 能满足 qq 的需求或回答 qq 提出的问题，而非字面上的匹配。
+相关性标注只考虑相关性，不考虑内容质量、时效性
+如果 qq 有多种意图，只要命中一种意图，就判定为相关。
+搜上位词出下位词，判定为相关；搜下位词出上位词，通常判定为不相关。
+丢核心词、重要限定词，判定为不相关；丢不重要的限定词，判定为相关。
+档位细分 根据内容占比划分高、中档位 如果 (q,d)(q,d) 相关，则进一步划分为高（超过 50%50\\% ）、**中（不超过 50%50\\% ）**两档。
+细分规则：满足需求的内容的篇幅占比是否超过 50%
+【例 1】
+搜索 qq = “泰坦尼克号”，出 dd = 演员莱昂纳多关于他的代表作的访谈，其中重点谈了《泰坦尼克号》电影。
+文档 dd 满足查询词 qq 的需求，判定为相关。
+如果访谈内容中《泰坦尼克号》篇幅占比大于 50%50\\% ，判定为高档位，否则判定为中档位。
+【例 2】
+搜索 qq = “小米手机测评”，出 dd = 几款安卓手机的测评，其中包括几款小米手机。
+文档 dd 满足查询词 qq 的需求，判定为相关。
+如果文档中小米手机篇幅占比大于 50%50\\% ，判定为高档位，否则判定为中档位。
+根据参考价值划分低、无档位 如果 (q,d)(q,d) 不相关，则进一步划分为低（有参考价值）、**无（无参考价值）**两档。
+细分规则：文档是否具有参考价值（用户可能愿意看这篇文档，代表有参考价值）
+【例 1】
+搜索 qq = “初二下册物理考点”，出 dd = “中考物理考点”。
+丢失重要限定词，导致文档 dd 无法满足查询词 qq 的需求，判定为不相关。
+“中考物理考点”有一定参考价值，档位为“低”
+【例 2】
+搜索 qq = “初二下册物理考点”，出 dd = “初一数学考点”。
+丢失重要限定词，导致文档 dd 无法满足查询词 qq 的需求，判定为不相关
+“初一数学考点 &quot; 没有参考价值，档位为“无”。
+总结 相关性是指 dd 能满足 qq 的需求或回答 qq 提出的问题。
+先判断 qq 与 dd 是否相关，划分为 22 大档位：
+判断是否相关只考虑相关性本身，不要考虑内容质量、时效性、个性化等其他因素。
+qq 可能有多种意图，只要 dd 命中其中一种意图，就算相关。
+搜上位词出下位词，判定为相关；反之，通常判定为不相关
+如果 dd 丢弃了 qq 中的词，需要判断 dd 能否满足 qq 的需求，从而判断是否相关。
+将大档位细分为 44 个小档位。
+根据所占篇幅，将 &ldquo;相关&rdquo; 细分为高、中 22 个小档位。
+根据文档是否有参考价值，将 &ldquo;不相关&rdquo; 细分为低、无 22 个小档位
+相关性细分为高、中、低、无 44 个小档位。
+有的公司将 &ldquo;相关&rdquo; 细分为 33 个小档位，“不相关 &quot; 细分为 22 个小档位，一共 55 个小档位。
+标注流程 由算法团队抽取待标注样本
+从搜索日志中随机抽取 nn 条查询词， nn 的大小取决于标注人力。既有高频查询词，也有中、低频查询词（假如中低频查询词占比太小，训练出的模型在中低频查询词上的表现会比较差）
+给定 qq ，从搜索结果中抽取 kk 篇文档，组成二元组 (q,d1),⋯ ,(q,dk)(q, d_1) , \\cdots, (q, d_k) ， 44 个相关性档位的 样本数量尽可能平衡。
+不能直接取搜索结果页排名 Topk 的文档，否则高档位（即高相关）文档过多，低档位文档过少。样本有偏不利于训练。
+由产品团队和算法团队监督标注过程和验收结果
+遇到难以界定档位的 (q,d)(q, d) ，由产品和算法团队做界定和解释。
+一条样本由至少两人标注，两人标注的结果需要有一致性。如果标注不一致，样本会被直接丢掉，或找第三人标注。
+一致率指两个人的标注结果有多大比例是相同的。一致率大于某个阈值，如 80%80\\% ，才会被接受。
+若一致率合格，再由产品团队抽查标注结果（可以认为产品团队的标注结果是正确的，为 ground truth），要求准确率高于某个阈值。
+只靠抽查还是不够（数量太少），可以事先往数据中埋雷（如往 1000010000 条待标注样本中掺杂 200200 条产品团队自己标注的样本），考察埋雷样本的标注准确率。
+评价指标（AUC、正逆序比、DCG） Pointwise 评价指标：AUC（Area Under the Curve）
+Pairwise 评价指标：PNR（正逆序比，Positive to Negative Ratio）
+Listwise 评价指标：DCG（Discounted Cumulative Gain）
+离线: AUC 和 PNR （看相关性模型在测试集上的表现够不够好）
+线上排序：DCG （线上直接搜索结果页存在搜索日志里，事后做抽样，让人工标注相关性，然后计算 DCG，评价排序是否合理）
+Pointwise 评价指标 二分类评价指标 把 相关性 看作 二分类问题，独立对待 每一对 (q,d)(q, d) 二元组。
+训练集还是 44 个小档位（高中低无），但测试集只用 22 个大档位（把测试集相关性档位转化为 0/1）
+高、中两档合并，作为标签 y=1y = 1 低、无两档合并，作为标签 y=0y = 0 相关性模型输出预测值 p∈[0,1]p\\in [0,1] ， pp 的值越大，表示模型认为查询词和文档越有可能相关
+二分类评价指标：
+准确率、召回率、F1、AUC（工业界最常用 AUC 来评价搜索相关性）
+调整二分类的阈值，获得很多组 假阳性率&amp;真阳性率 的二元组，获得 ROC 曲线
+用 **AUC （Area Under the Curve）**评价模型的预测是否准确。
+AUC =0.5= 0.5 说明模型没有学到东西 （没有比随机猜测更好）
+比较好的相关性模型的 AUC 在 0.8 ~ 0.95 之间
+Pairwise 评价指标 每次取两个二元组做对比。问题：只考虑文档两两之间的序，不考虑整体的序。
+根据模型估计的相关性分数 pp 对文档做排序（不知道真实相关性分数)
+例子中有 66 篇文档，它们的分数满足 p1≥p2≥⋯≥p6p_1 \\ge p_2 \\ge \\cdots \\ge p_6 有 kk 篇文档，则有 (k2)=k!2!×(k−2)!\\beginpmatrix k\\\\ 2 \\endpmatrix= \\frack!2!\\times (k-2)! 种方式将文档两两组合
+k=6k=6 ，有 (62)=15\\beginpmatrix 6\\\\ 2 \\endpmatrix = 15 种组合
+有 22 个逆序对 (2,3)(2,3) , (2,4)(2,4) ， 1313 个正序对
+正逆序比为： PNR=132\\textPNR=\\frac132 ⟨高,高⟩\\langle\\text高,\\text高\\rangle 这样的 pair，可以看成正序对，也可以忽略掉这样的二元组。
+以下两种情况正逆序比相同，都是 13:213:2 ，在 Pairwise 评价指标下是等价的。但实际上，右边的情况要优于左边。（因为错误发生在后面，用户浏览搜索结果页时通常是从上到下浏览，要保证前面的结果都是高相关性）
+Listwise 评价指标 更看重排在前面的文档，给更大的权重
+Pairwise 指标 v.s. Listwise 指标 有 nn 篇候选文档，根据模型打分做降序排列，把文档记作 d1,⋯ ,dnd_1, \\cdots, d_n 。（此时不知道真实相关性分数）
+d1,⋯ ,dnd_1, \\cdots, d_n 的真实相关性分数为 y1,⋯ ,yny_1, \\cdots, y_n 。（人工标注相关性档位，档位映射到 [0,1][0,1] 区间上的实数）
+理想的排序为 y1≥y2≥⋯≥yny_1 \\ge y_2 \\ge \\cdots \\ge y_n ，即模型打分的序与真实相关性分数的序一致，此时 pairwise 和 listwise 指标都最大化。
+逆序对会导致 pairwise 和 listwise 指标减小。
+pairwise 指标: 逆序对出现的位置不影响。
+listwise 指标：逆序对越靠前，对 listwise 指标造成的损失越大
+CG（Cumulative Gain） 有 nn 篇候选文档，根据模型打分做降序排列；它们的真实相关性分数为 y1,⋯ ,yny_1, \\cdots, y_n 。
+只关注排在前 kk (k≪n)(k\\ll n) 的文档，它们最可能获得曝光，对用户体验的影响最大。
+Cumulative Gain CG@k:
+CG@k=∑i=1kyi CG@k = \\sum^k_i = 1y_i CG@k 何时最大化？
+真实相关性分数 yy 最高的 kk 篇文档被模型排在前 kk 。
+前 kk 篇文档的序不重要，它们之间可以存在逆序对。
+DCG（Discounted Cumulative Gain） 有 nn 篇候选文档，根据模型打分做降序排列，它们的真实相关性分数为 y1,⋯ ,yny_1, \\cdots, y_n Discounted Cumulative Gain DCG@k:
+DCG@k=∑i=1kyilog⁡2(i+1) \\mathrmDCG@k =\\sum_i = 1^k\\fracy_i\\log_2(i+1) DCG@k 何时最大化?
+真实相关性分数 yy 最高的 kk 篇文档被模型排在前 kk 。
+前 kk 篇文档不存在逆序对。
+总结 相关性有 pointwise、pairwise、listwise 评价指标
+pointwise：单独评价每一个 (q,d)(q, d) 二元组，判断预测的相关性分数与真实标签的相似度。不考虑二元组之间的关系；
+pairwise：对比 (q,d1)(q, d_1) 和 (q,d2)(q, d_2) ，判断两者的序是否正确（正序对或逆序对）
+listwise：对比 (q,d1),(q,d2),⋯ ,(q,dn)(q, d_1),(q, d_2), \\cdots, (q,d_n) ，判断整体的序关系的正确程度
+离线评价指标 (point&amp;pair-wise) 事先准备人工标注的数据，划分为训练集和测试集。
+完成训练之后，计算测试集上的 AUC 和 PNR（分别是 pointwise 和 pairwise 评价指标）。
+相关性有 44 个档位，为什么用 AUC（AUC 是评价二分类的指标），而不用多分类的评价指标（Macro F1 和 Micro F1）？
+简而言之，相关性虽然有 44 个档位，但不是多分类问题。
+相关性的标签存在序关系： 高&gt;中&gt;低&gt;无\\text高 &gt; \\text中 &gt; \\text低 &gt;\\text无 多分类把 44 种标签看作 44 个类别，忽略其中的序关系。
+把 &ldquo;高&rdquo; 错判为 &ldquo;中&rdquo;，或错判为 &ldquo;无&rdquo;，错误严重程度不同，但被多分类视为同等的分类错误。
+线上评价指标 (listwise) 一个搜索 session: 用户实际做过的一次搜索，保存在搜索日志中：用户搜索 qq ，搜索结果页上按顺序展示文档 d1,⋯ ,dnd_1, \\cdots, d_n 从搜索日志中抽取一批 session，覆盖高、中、低频查询词。
+对于每个 session，取排序最高的 kk 篇文档 d1,⋯ ,dkd_1, \\cdots, d_k kk 的设定取决于用户浏览深度，比如 k=20k = 20 。
+高频查询词前 2020 篇文档几乎都是高相关，指标过高。
+高频查询词的 kk 设置的较大（比如 k=40k = 40 ），低频查询词的 kk 设置的较小（比如 k=20k = 20 ）
+人工标注相关性分数，记作 y1,⋯ ,yny_1, \\cdots, y_n 。
+想要对线上实际结果做评估，没办法事先准备一个测试集，只能在做评估的时候标注，每做一次评估就要标一批数据，通常一个月做一次，故叫月度评估。
+计算 DCG@k=∑i=1kyilog⁡2(i+1)\\mathrmDCG@k=\\sum_i=1^k\\fracy_i\\log_2(i+1) ，作为该 session 的评价指标。
+对 DCG@k 关于所有 session 取平均，评价线上相关性模型。
+【思考题】
+NDCG@k=DCG@kIDCG@k\\mathsfNDCG@k=\\frac\\mathsfDCG@k\\mathsfIDCG@k 是教科书中经典的评价指标，NDCG 是归一化的 DCG（N 表示 Normalized）
+其中 IDCG@k 是 DCG@k 的最优值，对应最优的排序。 因此 NDCG@k 的值介于 00 和 11 之间 【问题】NDCG 可否代替 DCG 用作线上评价指标？NDCG 有什么缺陷？
+【提示】
+先做召回，再做排序。假设召回的结果全是低相关文档。
+DCG 是高是低？NDCG 是高是低？DCG 与 NDCG 谁更合理？
+指标得到了正向提升，而用户体验实际大幅下降，会诱导系统进行负向优化。
+比如，在召回环节的一次上线，实验方案相比原方案，相关性大幅降低，但线上 NDCG 指标有可能会涨，这是因为 NDCG=DCG/IDCG\\textNDCG= \\textDCG/ \\textIDCG ，虽然 DCG 降低了，但是 IDCG 降低的幅度远大于 DCG 降低幅度，所以一次失败的优化却得到了正向效果。
+DCG 低，但 NDCG 不一定低，故 DCG 更合理。
+文本匹配（TF-IDF、BM25、词距） 在深度学习成熟之前，搜索引擎主要靠 文本匹配 来判断相关性。
+传统的搜索引擎使用几十种人工设计的文本匹配分数，作为线性模型或树模型的特征，模型预测相关性分数。
+词匹配分数（TF-IDF、BM25）、词距分数（OkaTP、BM25TP）。
+其他分数（类目匹配、核心词匹配）。
+2020 年后，搜索排序普遍放弃文本匹配，改用 BERT 模型，仅剩文本召回使用文本匹配做海选
+链路上的相关性模型 召回海选：
+打分量：数万 模型：文本匹配分数+线性模型，或双塔 BERT 模型 粗排：
+打分量：数千 模型：双塔 BERT 模型，或单塔 BERT 模型（又叫交叉 BERT 模型） 精排：
+打分量：数百 模型：单塔 BERT 模型（ 44 / 66 /￥ 层） 词匹配分数 反映查询词和文档的相关性
+中文分词：将查询词、文档切成多个字符串
+查询词： q=好莱坞电影推荐q = \\text好莱坞电影推荐 分词得到： Q=好莱坞,电影,推荐Q = \\\\text好莱坞, \\text电影, \\text推荐\\ QQ 中的词在文档 dd 中出现次数越多，则 qq 与 dd 越可能相关。
+TF-IDF 和 BM25 都是基于上述想法
+TF-IDF Term Frequency (TF) 词频 QQ : 分词结果记作集合 ，【例】： Q=好莱坞,电影,推荐Q = \\\\text好莱坞, \\text电影, \\text推荐\\ 。
+t∈Qt \\in Q ：一个词（term），【例】： t=电影t = \\text电影 。
+tft,d\\texttf_t,d ：词 tt 在文档 dd 中出现次数叫做词频。
+tft,d\\texttf_t,d 越大，说明 tt 与 dd 越可能相关
+∑t∈Qtft,d\\sum_t \\in Q\\texttf_t,d 越大，则 qq 与 dd 越可能相关
+用 tft,d\\texttf_t,d 衡量相关性的缺陷：文档 dd 越长，则 tft,d\\texttf_t,d 越大。
+把文档 dd 重复两遍，得到 d′=d+dd^\\prime=d+d 。
+TF 变成的原先两倍： tft,d′=2⋅tft,d\\texttf_t,d^\\prime =2\\cdot \\texttf_t,d 文档 d′d^\\prime 和 dd 的信息量相同，算出的相关性分数应当相等。
+解决方法：用文档 dd 的长度（记作 ldl_d ）对词频做归一化，即归一化的词频。用 ∑t∈Qtft,dld\\sum_t \\in Q\\frac\\texttf_t,dl_d 消除文档长度影响。
+ldl_d ：文档 dd 的长度 用 ∑t∈Qtft,dld\\sum_t \\in Q\\frac\\texttf_t,dl_d 衡量相关性仍然有缺陷：加和同等对待所有 tt 。
+词的重要性各不相同，不该同等对待。如何设定词的权重?
+语义重要性（term weight）：语义重要性在查询词处理环节计算，需要用深度学习计算。
+电影&gt;好莱坞 &gt;推荐\\text电影 &gt; \\text好莱坞 &gt; \\text推荐 t=电影t =\\text电影 是核心词
+t=好莱坞t =\\text好莱坞 是重要的限定词。
+t=推荐t =\\text推荐 是不重要的词。
+在深度学习成熟之前，词匹配算不了 term weight，有一个简单的方法给词设定权重：一个 term 在越多文档中出现，它的判别能力就越弱，给它设定的权重就越低。
+有多少篇文档包含 tt ？ 好莱坞 &lt;电影 &lt;推荐\\text好莱坞 &lt; \\text电影 &lt; \\text推荐 。
+Document Frequency (DF) dft\\textdf_t ：词 tt 在多少文档中出现过（数据集一共有 NN 篇文档）。
+0≤dft≤N0\\le \\textdf_t \\le N dft\\textdf_t 大，说明词 tt 判别能力弱，应当设置较小权重。
+“你”、“的”、“是”这样的停用词（stop word）的 DF 接近 NN ，对判断相关性几乎不起作用。
+“好莱坞”、“强化学习”、“王者荣耀”的 DF 都很小，判别能力强。
+Inverse Document Frequency（IDF） Inverse Document Frequency (IDF） 定义为:
+idft=logNdft \\mathrmidf_t =\\mathrmlog\\frac N\\mathrmdf_t IDF 只取决于文档的数据集
+对于人工智能论文数据集，“深度学习 &quot; 的 IDF 很小
+对于维基百科数据集，“深度学习 &quot; 的 IDF 很大
+idft\\mathrmidf_t 可以衡量词 tt 的判别能力； idft\\mathrmidf_t 越大，词 tt 越重要。
+用加权和 ∑t∈Qtft,dld⋅idft\\sum_t \\in Q\\frac\\texttf_t,dl_d \\cdot \\mathrmidf_t 衡量相关性
+Term Frequency-Inverse Document Frequency（TF-IDF） 查询词 qq 的分词结果记作 QQ ，它与文档 dd 的相关性可以用 TF-IDF 衡量
+TFIDF(Q,d)=∑t∈Qtft,dld⋅ idft \\mathrmTFIDF(Q, d)=\\sum_t\\in\\mathcalQ\\frac\\mathrmtf_t, dl_d\\cdot\\mathrm~idf_t TF-IDF 有很多变种，例如
+TFIDF(Q,d)=∑t∈Qlog⁡(1+tft,d)⋅ idft \\mathrmTFIDF(Q, d)=\\sum_t\\in\\mathcalQ\\log(1+\\mathrmtf_t, d) \\cdot\\mathrm~idf_t Okapi Best Match 25 (BM25) BM25 可以看做 TF-IDF 的一种变体：
+∑t∈Qtft,d⋅(k+1)tft,d+k⋅(1−b+b⋅ldmean(ld))⋅ln⁡(1+N−dft+0.5dft+0.5) \\sum_t\\in\\mathcalQ\\frac\\mathrmtf_t, d\\cdot(k+1)\\mathrmtf_t, d+k\\cdot\\left(1-b+b\\cdot\\fracl_d\\mathrmmean(l_d)\\right) \\cdot \\ln\\left(1+\\fracN-\\mathrmdf_t+0.5\\mathrmdf_t+0.5\\right) kk 和 bb 是参数，通常设置 k∈[1.2,2]k \\in[1.2,2] 和 b=0.75b=0.75 。
+BM25 有很多种变体
+在所有 词匹配分数 中，BM25 是最强的。如果学一个线性模型或者树模型预测相关性，BM25 的特征权重是最高的
+词袋模型 (bag of words) TF-IDF 和 BM25 都属于 词袋模型，隐含了词袋模型假设：只考虑词频，不考虑词的顺序和上下文。
+【例 1】：
+男朋友 / 送 / 的 / 礼物 送 / 男朋友 / 的 / 礼物 【例 2】：
+白 / 衬衫 / 灰 / 裤子 灰 / 衬衫 / 白 / 裤子 缺点：词袋模型忽略词序和上下文，丢失了语义，不利于准确计算相关性。
+前深度学习时代有很多词袋模型，例如 Latent Semantic Analysis (LSA)、Latent Dirichlet Allocation (LDA) 等都可以将查询词和文档映射为向量。
+RNN、BERT、GPT 都不是词袋模型，会考虑词的顺序和上下文，更好地理解查询词和文档的语义。
+词距分数 (Term Proximity) 从另一个角度反映相关性。
+【例】
+查询词 Q=亚马逊,雨林Q =\\\\text亚马逊, \\text雨林\\ 文档 d=我在亚马逊上网购了一本书，介绍东南亚热带雨林的植物群落……d= \\text我在亚马逊上网购了一本书，介绍东南亚热带雨林的植物群落…… 如果用 TF-IDF 或 BM25 计算相关性，会得出错误结论。
+想要避免这类错误，需要用到 词距。
+词距: QQ 中的两个词出现在文档 dd 中，两者间隔多少词。 词距 越小， QQ 与 dd 越可能相关。
+OkaTP 既考虑了词频，也考虑了词距:
+词 tt 在文档 dd 中出现的位置记作集合 O(t,d)O(t,d) 。
+出现在文档 dd 中第 2727 、 8484 、 9898 位置上。
+那么 O(t,d)=27,84,98O(t,d)=\\27,84,98\\ 。
+集合 O(t,d)O(t,d) 的大小等于词频： ∣O(t,d)∣=tft,d|\\mathcalO(t,d)|=\\mathrmtf_t,d 。
+tt 和 t′t^\\prime 是查询词 QQ 中的两个词，它们的 词距分数 TP
+tp(t,t′,d)=∑o∈O(t,d)∑o′∈O(t′,d)1(o−o′)2. \\mathrmtp(t, t&#x27;, d)=\\sum_o\\in O(t, d)\\sum_o&#x27;\\in O(t&#x27;, d)\\frac1(o-o&#x27;)^2. 查询词中的 t,t′∈Qt,t^\\prime \\in Q 在文档 dd 中出现 次数越多、距离越近，则 tp(t,t′,d)\\mathrmtp(t,t^\\prime,d) 越大。
+OkaTP :
+∑t,t′∈Q,t≠ttp⁡(t,t′,d)⋅(k+1)tp⁡(t,t′,d)+k⋅(1−b+b⋅ldmean⁡(ld))⋅min⁡(idft,idft′) \\sum_t, t^\\prime\\in\\mathcalQ, t\\neq t\\frac\\operatornametp(t, t^\\prime, d)\\cdot(k+1)\\operatornametp(t, t^\\prime, d)+k\\cdot\\left(1-b+b\\cdot\\fracl_d\\operatornamemean(l_d)\\right) \\cdot \\min(\\mathrmidf_t,\\mathrmidf_t^\\prime) 第一项跟 BM25 的区别是，把 Term Frequency tft,d\\mathrmtf_t, d 换成了词距分数 TP tp(t,t′,d)\\mathrmtp(t,t&#x27;,d) 。TP 越大，该项就越大。
+第二项两个 term 各有一个 IDF，取两者中 较小 的那一项。
+对两个 term 的组合求加和
+总结 词匹配分数包括 TF-IDF、BM25 等
+TF：词在文档中出现次数越多越好。
+IDF：词在较少的文档中出现，则给词较高的权重。
+基于词袋模型，只考虑词频，不考虑词序和上下文。
+词距分数包括 OkaTP 等
+查询词 QQ 中的词在文档中出现次数 越多越好。
+查询词 QQ 中的任意两个词在文档中 越近越好。
+传统搜索相关性会用很多 人工设计的文本匹配分数，如词匹配分数、词距分数等一共几十种分数，把它们作为特征，用 线性模型 或 树模型 预测相关性。
+基于文本匹配的传统方法没有真正理解查询词和文档的语义，效果远不如深度学习。现在只有召回海选还用这种方法，用较小代价排序海量文档。
+BERT 模型 现代搜索引擎普遍使用 BERT 模型计算查询词 qq 和文档 dd 的相关性，文本匹配的方法正在逐步被淘汰。
+交叉/单塔 BERT 模型：把查询词和文档拼成一个序列输入 BERT，准确性好，但推理代价大，通常用于 搜索链路的下游（精排、粗排）。
+双塔 BERT 模型：不够准确，但是推理代价小，给上万篇文档打分也没有问题，通常用在 链路上游（粗排、召回海选）。
+训练相关性 BERT 模型的 4 个步骤：预训练、后预训练、微调、蒸馏。
+粗排 给几千篇文档打分，可能用交叉 BERT（此时模型应较小，只有 22 层或 44 层），也可能用双塔 BERT。
+召回海选 给几千或者几万篇文档打分。
+模型结构、线上推理 交叉 BERT 模型 交叉 BERT 模型的 self attention 层对查询和文档做了交叉。
+输入的查询词、标题、正文（有可能会包含更多字段，如摘要、Anchor Query）会被切分为 token，每个 token 可以是汉字、词、拉丁字母、英文单词或其他字符串。token 会被 Embedding 层表征为向量。
+每个 token 被表征为 33 个向量，取加和作为 token 的表征
+token embedding：表征 token 本身。
+position embedding：位置编码，表征 token 的序。
+segment embedding：用于区分查询词、标题、正文 （非必要，模型可以通过 position embedding 和 [SEP] 分隔符区分查询词、标题、正文 33 个字段）。
+模型的输入有 nn 个 token，被表征为 nn 个向量；然后经过很多自注意力层和全连接层，最终模型输出一个 00 ~ 11 之间的实数作为相关性分数，指示输入句子对的相似性。
+交叉编码器不会产生句子嵌入。
+分词粒度：字粒度 v.s. 字词混合粒度 需要把查询词和文档切分成很多 token，具体的分词方法对相关性有很大影响。
+对于 中文，有 22 种分词粒度：
+字粒度：将每个汉字/字符作为一个 token。
+词表较小（几千），只包含汉字、字母、常用字符。词表较小则 Embedding Table 也较小。
+优点：实现简单，无需做分词。
+第一个版本的相关性 BERT 最好用字粒度，实现简单，效果也还行，可以作为好的 baseline。
+字词混合粒度：做分词，将分词结果作为 tokens。
+词表较大（几万、十几万），包含汉字、字母、常用符号、常用中文词语、常用英文单词
+与字粒度相比，字词混合粒度得到的序列长度更短（即 token 数量更少，可以少一半左右）。
+参考 WoBERT，字词混合粒度更复杂，效果更好。
+序列更短（token 数量更少）有什么好处？
+BERT 推理的计算量是序列长度/token 数量的超线性函数，介于线性和平方时间复杂度之间。自注意力层是平方时间复杂度，全连接层是线性时间复杂度。序列越长，推理代价越大。
+为了控制推理成本，会限定 token 数量，例如 128128 或 256256 。
+如果文档超出 token 数量上限，会被截断，或者做抽取式摘要（准确性降低）。
+使用字词混合粒度，token 数量更少，推理成本降低。（字词混合粒度的序列长度可以比字粒度少一半左右，如字粒度需要 256256 tokens，字词混合粒度只需要 128128 tokens）
+推理降本 对每个 (q,d)(q,d) 二元组计算相关性分数 score，精排有几百个 (q,d)(q,d) 二元组，粗排有几千个，由于交叉 BERT 模型推理代价很大，代价很大。
+【降本方案】
+用内存换计算，用 Redis 这样的 KV 数据库缓存 ⟨q,d,score⟩\\langle q, d, score\\rangle 。
+把查询词和文档 id (q,d)(q,d) 作为 key，相关性分数 (score) 作为 value。
+线上做排序时要计算相关性时，如果 (q,d)(q,d) 命中缓存，则避免计算。用户的搜索大多集中在很少的高频查询词上，由于 (q,d)(q,d) 重复率很高，这种缓存机制可以避免一半以上的计算。
+如果超出内存上限（通常几个 TB 的内存），按照 LRU（Least Recently Used，最近最少使用）清理缓存。
+模型量化技术，例如将 float32 转化成 int8。
+神经网络的参数都是用浮点数表示的，通常为 float32，也叫单精度浮点数，占 32bits 的存储。把 float32 压缩成 int8 这样的低精度整数。
+训练后量化（post-training quantization，PTQ）：训练不变，量化和训练互不影响，训练完了再做量化，把 float32 压缩成 int8。
+训练中量化（quantization-aware training，QAT）：训练和量化是结合在一起做的，训练模型时要做前向传播和反向传播，前向传播使用量化后的低精度整数做计算，反向传播仍使用原始的浮点数权重和浮点数梯度。
+文本摘要技术，使用文本摘要降低 token 数量。
+如果文档长度超出上限，则用摘要替换文档，优于直接截断文档。
+在文档发布时计算摘要。可以是抽取式（取一些关键的句子和段落作为摘要），也可以是生成式（用大语言模型生成摘要）。
+如果摘要效果好，可以将 token 数量上限降低，比如从 128128 降低到 9696 双塔 BERT 模型 准确性不好，但推理代价小。
+双塔 BERT 模型既可以用于召回，也可以用于排序。
+左右的神经网络分别把查询词和文档映射成向量
+左边的神经网络（查询词塔）在 线上实时做推理，用户做一次搜索，只有一个查询词，左塔做一次推理，代价很小。
+查询词类目等特征由查询词处理环节提供。
+右边的神经网络（文档塔）不会在线上做推理，而是在 文档发布时离线做一次推理，把算出的文档向量表征存入哈希表（key 是文档 id，value 是向量表征），线上计算相关性时就不用再计算文档的向量表征了。
+因此双塔模型在线上的推理代价较小
+计算查询词的向量表征和文档的向量表征的向量相似度，把向量相似度作为估计的相关性分数
+总结 交叉/单塔 BERT 模型：
+准确性高，计算量大，适用于 精排、粗排。
+字词混合粒度分词降低序列长度，即 token 数量。
+用 KV 内存数据库缓存 ⟨q,d,score⟩\\langle q, d, score\\rangle ，可以避免大部分计算。
+用模型量化技术，把 float32 转化成 int8，降低推理成本。
+设置较小的 token 数量上限，将长文档替换成摘要。
+双塔 BERT 模型：
+准确性低，计算量小，适用于 粗排、召回海选。
+事先 离线 计算每篇 文档 dd 的向量表征 zdz_d ，将 (d,zd)(d, z_d) 存入哈希表。
+线上计算 (q,d)(q,d) 的相关性时，给定候选文档 dd ，从哈希表中读取它的向量表征 zdz_d ,（key 是文档 id，value 是向量表征）。
+线上计算查询词 qq 的向量表征 xqx_q ，然后计算内积 ⟨xq,zd⟩\\langle x_q, z_d \\rangle (可能做个 sigmoid 内积)，结果作为 (q,d)(q,d) 相关性分数。
+BERT 模型的训练 不论是交叉 BERT 还是双塔 BERT，如果用在排序中计算相关性，两者的训练方法相同。
+训练分 44 个步骤：
+预训练（pretrain）：用 MLM（Mask Language Model）等任务预训练模型。(直接用开源的模型效果不差，但最好自己用搜索引擎的文档库做预训练，效果会更好)
+后预训练（post pretrain）：利用用户的点击、交互 数据 训练模型，因为相关性越好的文档越有可能被点击和交互。
+微调（fine tuning）：用人工标注的相关性数据训练模型。
+蒸馏（distillation）：得到更小的模型，加速线上的推理（先训练大模型再蒸馏小模型，效果远好于直接训练小模型）。
+微调（fine tuning） 微调用监督学习训练模型，模型估计 qq 和 dd 的相关性。
+人工标注数十万、数百万条样本，每条样本为 (q,d,y)(q,d,y) ，(查询词，文档，人工标注的相关性分数）
+可以把 估计相关性 看作 回归任务，也可以看作 排序任务。
+回归任务：让预测的值 pp 拟合 yy ，起到 “保值” 的作用
+给定 (q,d)(q,d) ，模型估计相关性为 pp 。
+pp 越接近真实标签 yy 越好
+排序任务：让 pp 的序拟合 yy 的序，起到 “保序” 的作用。只在乎预测的序是否正确，不在乎预测的值离 yy 是远是近。
+给定两条样本 (q,d1,y1)(q,d_1,y_1) 和 (q,d2,y2)(q,d_2,y_2) ，相同的查询词 qq ，不同的文档 dd ，真实相关性分数满足 y1&gt;y2y_1&gt;y_2 。
+模型预测的相关性分数 p1p_1 和 p2p_2 应当满足 p1&gt;p2p_1&gt;p_2 （正序对），反之 p1&lt;p2p_1&lt;p_2 为逆序对。
+回归任务 数据： (q1,d1,y1),⋯(qn,dn,yn)(q_1,d_1,y_1) ,\\cdots (q_n,d_n,y_n) ，其中 yiy_i 是归一化后的相关性分数， yi∈[0,1]y_i \\in [0,1] 。
+模型预测 (qi,di)(q_i,d_i) 的 相关性 为 pip_i 。
+最小化损失函数 1n∑i=1nlog⁡(yi,pi)\\frac1n\\sum_i=1^n\\log(y_i,p_i) ，使得 pip_i 尽量接近 yiy_i 。
+均方差损失函数：
+MSE_Loss(yi,pi)=12(yi−pi)2 \\mathrmMSE\\_Loss(y_i, p_i)=\\frac12(y_i-p_i)^2 交叉熵损失函数（类似二分类，用 soft label 更好)
+CE_Loss(yi,pi)=−yi⋅ln⁡pi−(1−yi)⋅ln⁡(1−pi) \\mathrmCE\\_Loss(y_i, p_i)=-y_i\\cdot\\ln p_i-(1-y_i)\\cdot\\ln(1-p_i) 用 CE Loss 时，标签 yy 不止是 00 （最低相关性档位）和 11 （最高相关性档位），还可以是 00 ~ 11 之间的小数（其余相关性档位）。
+排序任务 数据：一条样本包含一条查询词 qq 和 kk 篇文档 d1,⋯ ,dkd_1, \\cdots, d_k 。
+对于 (q,di)(q,d_i) ，真实相关性分数记作 yiy_i ，模型预测的相关性记作 pip_i 。
+两种排序方式：按照 yiy_i 排序、按照 pip_i 排序。
+排序任务不在乎 pip_i 和 yiy_i 的值是否接近，只在乎两种排序是否接近。
+设 yi&gt;yjy_i&gt;y_j ，损失函数应当鼓励 pi−pjp_i-p_j 尽量大。
+如果 pi≥pjp_i \\ge p_j （模型预测正确），则称 (i,j)(i,j) 为 正序对。
+如果 pi&lt;pjp_i&lt;p_j （模型预测错误），则称 (i,j)(i,j) 为 逆序对。
+损失函数应当惩罚逆序对，鼓励正序对 —&gt; 鼓励 pi−pjp_i-p_j 尽量大。 Pairwise logistic 损失函数：
+∑(i,j):yi&gt;yjln⁡[1+exp⁡(−γ⋅(pi−pj))]. \\sum_(i, j): y_i &gt; y_j\\ln\\left [1+\\exp\\left(-\\gamma\\cdot(p_i-p_j)\\right)\\right]. pi−pjp_i-p_j 越大，则损失函数越小。最小化损失函数，可以鼓励 (i,j)(i,j) 成为正序对。
+γ\\gamma 是一个 &gt;0&gt;0 的超参数，控制 logistic 函数的形状。
+一条样本包含 kk 篇文档，对 kk 篇文档两两组合，最小化加和，会鼓励模型给 kk 篇文档的排序，接近按 yy 做的排序。
+总结 回归任务，使用 均方差损失（MSE） 或 交叉熵损失（CE），有利于提升 AUC 指标。
+排序任务，使用 pairwise logistic 损失，有利于提升正逆序比指标。
+不要把估计相关性看作多分类任务：相关性有多个档位，但档位之间是有序的，而不是无序的类别名称。
+如果同时用 AUC 和 正逆序比 作为离线评价指标，则同时使用 CE 和 pairwise logistic 损失，取两者的加权和作为优化的目标函数。
+后预训练（post pretrain） Zou et al. Pre-trained language model based ranking in Baidu search. In KDD , 2021. Zou et al. Pre-trained language model-based retrieval and ranking for web search. ACM Transactions on the Web, 2022. 训练相关性模型：预训练 -&gt; 后预训练 -&gt; 微调 -&gt; 蒸馏
+后预训练的步骤
+从搜索日志中挑选十亿对 (q,d)(q,d) 。对于 4848 层 BERT，数据量超过 10 亿的话，边际效益会越来越小，更多数据对指标的提升不大。
+自动生成标签：将用户行为 x\\mathbf x 映射到相关性分数 y^\\haty 。自动生成的标签 y^\\haty 噪声很大，但仍然有很多信息量，这就是为什么后预训练有效 (技巧很多，对后续结果影响最大)。
+用自动生成的 (q,d,y^)(q,d, \\haty) 训练模型。方法与微调类似，都是监督学习。但额外加上预训练的 MLM 任务，避免预训练的结果被清洗掉。
+步骤 1：挑选 (q,d)(q, d) 搜索日志记录用户每次搜索的查询词 qq 和搜索引擎返回的文档。
+根据搜索日志抽取查询词 qq ，需要覆盖高、中、低频的 qq 。（不是均匀抽样，否则抽到的几乎都是高频查询词）
+给定 qq ，搜索日志记录搜到的文档 d1,⋯ ,dn d_1, \\cdots, d_n ，以及模型估计的相关性分数。（精排相关性模型的打分，非人工标注。不需要很准确，只是用来筛选文档而已。）
+根据线上模型估计的相关性分数，选取 nn 篇文档的一个子集，均匀覆盖各相关性档位。
+步骤 2：自动生成相关性分数 步骤 1 根据搜索日志选出十亿对 (q,d)(q,d) 。
+对搜索日志做统计，得出 (q,d)(q,d) 的点击率和多种交互率，记作向量 x\\mathbfx ，其维度大小就是交互统计的特征数，比如关注点击率，点赞率，收藏率，转发率，那么这个 x\\mathbfx 维度就是 44 ，每个位置为对应值。
+已经得到十亿条样本 (q,d,x)(q,d,\\mathbfx) ，其中 向量 x\\mathbfx 是用户行为。
+相关性 yy 与 x\\mathbfx 存在某种函数关系，(相关性越高，用户越有可能点击和交互)。
+找出 yy 与 x\\mathbfx 的函数关系： y^=t(x)\\haty = t(\\mathbfx) , 函数 t(⋅)t(\\cdot) 将用户行为映射到相关性 yy ，只要学到了这个函数 t(⋅)t(\\cdot) ，就能自动生成标签 y^\\haty 。生成标签 y^\\haty 是对真实标签 yy 的近似。
+选取几万对 (q,d)(q,d) ，人工标注相关性分数 yy 。
+搜索日志记录了 (q,d)(q,d) 的用户行为 x\\mathbfx 。
+得到 几万条样本 (x,y)(\\mathbfx,y) ，训练一个小模型 t(x)t(\\mathbfx) 拟合 yy 。具体来说，定义一个小模型 t(⋅)t(\\cdot) (GBDT/小规模神经网络），它将用户行为 x\\mathbfx 映射到相关性分数 yy ，这样就可以自动生成标签 y^\\haty ，是对真实标签 yy 的近似。
+【注意】小模型 t(⋅)t(\\cdot) 只能使用点击率、交互率等用户行为作为输入。
+尽量不使用文本特征作为输入。
+小模型 t(⋅)t(\\cdot) 的作用 是把用户行为转化成相关性分数，而不是根据文本特征去判别 (q,d)(q,d) 相关性。
+绝对不能用相关性 BERT 模型打分作为输入，否则会产生反馈回路（BERT 模型打分 -&gt; 训练小模型 t(⋅)t(\\cdot) -&gt; 小模型 t(⋅)t(\\cdot) 生成数据 -&gt; 训练 BERT 模型）
+对于所有十亿条样本 (q,d,x)(q,d,\\mathbfx) ，用训练好的小模型打分 y^=t(x)\\haty = t(\\mathbfx) ，得到十亿条带自动生成标签的样本 (q,d,y^)(q,d,\\haty) ，可以用它们来训练 BERT 模型。
+步骤 3：用生成的数据训练模型 前两步得到十亿条样本 (q,d,y^)(q,d,\\haty) ，其中 y^\\haty 是自动生成的相关性分数。
+基于预训练的 BERT 模型，用 (q,d,y^)(q,d,\\haty) 做监督学习。
+监督学习同时用 33 个任务，取 33 个损失函数的加权和。
+回归任务，起到“保值”的作用（模型的输出尽量接近 y^\\haty ），有利于 AUC 指标。
+排序任务，起到“保序”的作用（鼓励正序对，惩罚逆序对），有利于正逆序比指标。
+预训练的 MLM 任务，避免清洗掉预训练的结果（后预训练的数据量很大，量级是十亿，会清洗掉预训练的结果）。
+后预训练为什么有效？
+大幅增加了 有标签样本数量（百万 -&gt; 十亿）。
+人工标注的相关性数据只有几十万到几百万条 (q,d,y)(q,d, y) 。
+后预训练使用十亿条 (q,d,y^)(q,d,\\haty) 。
+巨大的数据量使模型更准确。
+用户行为 x\\mathbfx 与相关性 yy 有很强的关联。
+(q,d)(q,d) 的相关性越高，越有可能得到点击和交互。
+小模型可以根据点击率和交互率 x\\mathbfx 较为准确地推断 yy 。
+小模型生成的标签 y^\\haty 虽然有噪声，但也有很大的信息量。
+蒸馏（distillation） 为什么做蒸馏？
+用户每搜一个查询词，排序需要用相关性。
+BERT 模型给数百、数千对 (q,d)(q,d) 打分。BERT 模型越大，计算量越大，给相关性的打分越准。
+为了平衡计算量和准确性，精排常用 44 ~ 1212 层交叉 BERT 在线上做推理，粗排常用 22 ~ 44 层交叉 BERT（或双塔 BERT）。
+两种方法谁更好？
+直接训练小模型（ 22 ~ 1212 层） 先训练 4848 层大模型，再蒸馏小模型（better） 先训练 48 层 BERT 作为 teacher，再蒸馏小模型，效果优于直接训练小模型。
+工业界经验：
+4848 层对比 1212 层，AUC 高 2%2\\% 以上。 4848 层蒸馏 1212 层，参数量压缩了 1010 倍以上，AUC 几乎无损。 4848 层蒸馏 44 层，AUC 损失 0.5%0.5\\% 。 怎样做蒸馏?
+做预训练、后预训练、微调，训练好 4848 层 BERT 大模型作为 teacher (参数量一二十亿)。
+Teacher 模型越大，它本身越准确，蒸馏出的 student 也越准确。 4848 层 teacher，效果优于 2424 层和 1212 层 teacher。 准备几亿对 (q,d)(q,d) ，用 teacher 给 (q,d)(q,d) 打分 y^\\haty 。
+蒸馏的数据量越大越好。 数据量少于 11 亿，蒸馏会损失较大 AUC。 数据量超过 1010 亿，边际效益很小。 在数据 (q,d,y^)(q,d,\\haty) 上做监督学习训练小模型。
+只训练 11 epoch。（ 11 亿条样本上训练 22 epoch，效果不如 22 亿条样本上训练 11 epoch。) 与微调相同，同时用回归任务、排序任务 蒸馏：一些有效的技巧。
+Student 小模型要先预热、再蒸馏。
+预热：先做预训练、后预训练、微调训练 student。（与训练 teacher 的步骤相同。)
+基于预热的模型，用蒸馏数据 (q,d,y^)(q,d,\\haty) 训练 student。
+给 student 做预热，效果优于随机初始化，也优于只做预训练
+不要做逐层蒸馏
+逐层蒸馏：让 student 的中间层拟合 teacher 的中间层。逐层蒸馏代价大不好调，多花算力，还不如增加蒸馏数据量。
+用相同的算力，直接拟合 y^\\haty 优于逐层蒸馏。
+多级蒸馏和单级蒸馏谁更好？
+多级蒸馏： 4848 层 -&gt; 1212 层 -&gt; 44 层。 单级蒸馏： 4848 层 -&gt; 44 层。 有争议，可能是单级蒸馏更好 与其做多级蒸馏，还不如用同等的算力增加数据量。
+总结 预训练（pretrain）：用跟任务无关的文本训练模型，如用 MLM 等任务在海量文本数据上训练 BERT 模型。
+后预训练（post pretrain）：用一个 GBDT 小模型自动生成数据，将用户行为 x\\mathrmx 映射到相关性标签 y^\\haty 。用自动生成的数据训练 BERT 大模型和小模型，结合回归任务排序任务以及预训练任务。
+微调（fine tuning）：使用人工标注的数据，数据量相对较小，一般几十万（最多几百万）条样本，监督学习，同时用回归和排序任务。
+蒸馏（distillation）：先训练大模型，用训练好的大模型给几亿条 (q,d)(q, d) 打分，得到蒸馏数据；基于预热好的小模型，用蒸馏数据做监督学习；最终得到的小模型部署到线上做相关性。
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:10,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
 Encoder（左边）：负责理解输入文本，为每个输入构造对应的语义表示（语义特征）； Decoder（右边）：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。 这两个模块可以根据任务的需求而单独使用：
 纯 Encoder 模型：适用于只需要理解输入语义的任务，例如句子分类、命名实体识别； 纯 Decoder 模型：适用于生成式任务，例如文本生成； Encoder-Decoder 模型 或 Seq2Seq 模型： 适用于需要基于输入的生成式任务，例如翻译、摘要。 Transformer 家族 Encoder 分支 纯 Encoder 模型只使用 Transformer 模型中的 Encoder 模块，也被称为自编码 (auto-encoding) 模型。在每个阶段，注意力层都可以访问到原始输入句子中的所有词语，即具有 “双向 (Bi-directional)”注意力。
 纯 Encoder 模型通常通过破坏给定的句子（例如随机遮盖其中的词语），然后让模型进行重构来进行预训练，最适合处理那些需要理解整个句子语义的任务，例如句子分类、命名实体识别（词语分类）、抽取式问答。
@@ -754,7 +1614,7 @@ Warmup 是在训练开始阶段，将学习率从 0 缓增到指定大小，而�
 如果不进行 Wamrup，那么模型一开始就快速地学习，由于梯度消失，模型对越靠后的层越敏感，也就是越靠后的层学习得越快，然后后面的层是以前面的层的输出为输入的，前面的层根本就没学好，所以后面的层虽然学得快，但却是建立在糟糕的输入基础上的。
 很快地，后面的层以糟糕的输入为基础到达了一个糟糕的局部最优点，此时它的学习开始放缓（因为已经到达了它认为的最优点附近），同时反向传播给前面层的梯度信号进一步变弱，这就导致了前面的层的梯度变得不准。但Adam 的更新量是常数量级的，梯度不准，但更新量依然是数量级，意味着可能就是一个常数量级的随机噪声了，于是学习方向开始不合理，前面的输出开始崩盘，导致后面的层也一并崩盘。
 如果 Post Norm 结构的模型不进行 Wamrup，我们能观察到的现象往往是：loss 快速收敛到一个常数附近，然后再训练一段时间，loss 开始发散，直至 NAN。 如果进行 Wamrup，那么留给模型足够多的时间进行“预热”，在这个过程中，主要是抑制了后面的层的学习速度，并且给了前面的层更多的优化时间，以促进每个层的同步优化。 这里的讨论前提是梯度消失，如果是 Pre Norm 之类的结果，没有明显的梯度消失现象，那么不加 Warmup 往往也可以成功训练。
-Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:8,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
+Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:11,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
 KV Cache 只能用于 Decoder 架构的模型，因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 KK 和 VV 可以缓存起来。
 KV Cache 推理过程 假设模型初始输入只有 11 个 token
 Att(Q,K,V)=softmax(q1k1⊤)v1 \\mathrmAtt(Q, K, V) = \\textsoftmax(\\mathbfq_1 \\mathbfk_1^\\top ) \\mathbfv_1 其中 : Q=(q1)∈R1×dQ = \\left( \\mathbfq_1 \\right) \\in \\mathbbR^1\\times d ， K=(k1)∈R1×dK = \\left( \\mathbfk_1 \\right) \\in \\mathbbR^1\\times d ， V=(v1)∈R1×dV = \\left( \\mathbfv_1 \\right) \\in \\mathbbR^1\\times d 当模型生成第 22 个 token 时，Attention 的计算如下：
@@ -841,7 +1701,7 @@ BL⋅(512+64)=576⋅BLBL \\cdot (512+64) = 576 \\cdot BL forward
 MoveElision 优化策略: 省略此处的拼接 RoPE 部分和非 RoPE 部分的过程，而是直接分别计算量部分的额 Attention Score 并相加（考虑 qtkj⊤=qtCkjC⊤+qtRkjR⊤\\mathbfq_t\\mathbfk_j^\\top = \\mathbfq_t^C \\mathcalk_j^C^\\top+ \\mathbfq_t^R k_j^R^\\top )
 1 2 3 4 5 6 7 8 9 # MoveElision [B, 128, L, 512]*[B, 128, L, 512] + [B, 128, L, 64]*[B, 128, L, 64] attn_weights = ( torch.matmul(q_pe, k_pe.mT) + torch.matmul(q_nope, compressed_kv.unsqueeze(-3).mT) ) * self.softmax_scale attn_weights = nn.functional.softmax( attn_weights, dim=-1, dtype=torch.float32 ).to(q_nope.dtype) attn_output = torch.einsum(&#39;bhql,blc-&gt;bhqc&#39;, attn_weights, compressed_kv) attn_output = torch.einsum(&#39;bhqc,dhc-&gt;bqd&#39;, attn_output, out_absorbed) 作者认为没有必要再改变顺序，对模型参数进行预处理，将 WUKW^UK 与 WUQW^UQ 相乘，以及将 WUVW^UV 与 WOW^O 相乘。
 这是因为， WUKW^UK 与 WUQW^UQ 相乘后的结果可以视为 HH 个大小为 1536×5121536 \\times 512 的低秩（不超过 128）矩阵，而 WUVW^UV 与 WOW^O 相乘的结果可以视为 HH 个大小为 5120×5125120 \\times 512 的低秩矩阵。相比用这些特别大的低秩矩阵做投影，明显不如按照低秩分解形式依次相乘来得划算。
-Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:9,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
+Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:12,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
 具体来说，对于一个事件，它的 自信息 大小与其发生概率有关。它是衡量与概率空间中单个事件或离散随机变量取值相关的信息量的一种 量度。
 它用信息的单位表示，例如 bit、nat 或是 hart，使用哪个单位取决于在计算中使用的对数的底。
 自信息的期望值 就是信息论中的 熵，它反映了 随机变量采样时的平均不确定程度。

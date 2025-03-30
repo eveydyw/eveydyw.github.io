@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>SearchEngine on EV's Blog</title><link>https://eveydyw.github.io/blogs/searchengine/</link><description>Recent content in SearchEngine on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Thu, 17 Oct 2024 20:37:39 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/searchengine/index.xml" rel="self" type="application/rss+xml"/><item><title>SearchEngine-2-相关性</title><link>https://eveydyw.github.io/blogs/searchengine/rel/</link><pubDate>Thu, 17 Oct 2024 20:37:39 +0800</pubDate><guid>https://eveydyw.github.io/blogs/searchengine/rel/</guid><description>&lt;h2 id="相关性定义与分档" class="heading">
+ 相关性：定义与分档&lt;a href="#%e7%9b%b8%e5%85%b3%e6%80%a7%e5%ae%9a%e4%b9%89%e4%b8%8e%e5%88%86%e6%a1%a3" aria-labelledby="相关性定义与分档">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;p>&lt;strong>工业界标准流程：&lt;/strong>&lt;/p>
+
+
+
+ 
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ &lt;div class="mathjax-display">
+ &lt;span class="katex">&lt;math xmlns="http://www.w3.org/1998/Math/MathML" display="block">&lt;semantics>&lt;mrow>&lt;mtext>制定标注规则&lt;/mtext>&lt;mo>→&lt;/mo>&lt;mtext>标注数据 &lt;/mtext>&lt;mo>→&lt;/mo>&lt;mtext> 训练模型&lt;/mtext>&lt;mo>→&lt;/mo>&lt;mtext>线上推理 &lt;/mtext>&lt;/mrow>&lt;annotation encoding="application/x-tex">
+\text{制定标注规则} \rightarrow \text{标注数据 } \rightarrow \text{ 训练模型} \rightarrow \text{线上推理 }
+&lt;/annotation>&lt;/semantics>&lt;/math>&lt;/span>
+ &lt;/div>
+ 
+ 
+
+&lt;ul>
+&lt;li>
+&lt;p>搜索产品和搜索算法团队定义相关性标注规则。&lt;/p></description></item><item><title>SearchEngine-1-概要</title><link>https://eveydyw.github.io/blogs/searchengine/basics/</link><pubDate>Mon, 14 Oct 2024 18:51:07 +0800</pubDate><guid>https://eveydyw.github.io/blogs/searchengine/basics/</guid><description>&lt;h2 id="搜索引擎的基本概念" class="heading">
+ 搜索引擎的基本概念&lt;a href="#%e6%90%9c%e7%b4%a2%e5%bc%95%e6%93%8e%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5" aria-labelledby="搜索引擎的基本概念">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>
+
+
+
+
+ &lt;blockquote class="blockquote">
+ &lt;ul>
+&lt;li>
+&lt;p>&lt;strong>查询词（query）&lt;/strong>：用户在搜索框中输入的词。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>查询建议（SUG）&lt;/strong>：用户点击搜索之前，搜索引擎会给出的相关词，如用户输入“深度学习”，SUG 可能为“深度学习框架”、“深度学习教程”等等。&lt;/p>
+&lt;p>作用是让搜索引擎用起来更方便。&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>文档&lt;/strong>：搜索结果，如网页链接（Google、百度）、商品（Amazon、淘宝）、视频（YouTube、B 站）&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>搜索结果页&lt;/strong>：搜索完成的整个界面。&lt;/p>
+&lt;p>搜索结果页的主体为文档，会有首图、标题、摘要等预览&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>标签/筛选项&lt;/strong>：搜索结果页中包含的信息，如最新（按时间）、最热（按点击&amp;amp;交互次数）、视频。&lt;/p></description></item></channel></rss>
