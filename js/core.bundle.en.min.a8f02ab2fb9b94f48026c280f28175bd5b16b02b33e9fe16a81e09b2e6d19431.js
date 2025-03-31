@@ -105,126 +105,7 @@ Assistant Agent: 通过LLM解决具体问题 UserProxy Agent: 用户代理，可
 Agent 配置
 System message： 默认的agent prompt Llm config： LLM 及其配置 Max consecutive auto reply： 最大对话次数 Human input mode：人参与的形式（ Assistant默认never，User Proxy 默认always） flowchart LR A[Agent] --> B[Conversable Agent] B --> C[Assistant Agent] B --> D[User Proxy Agent] B --> E[Group Chat Manager] 使用AutoGen构建的六个不同应用程序示例。他们的谈话模式显示了AutoGen的灵活性和实力。
 Example
-自定义AutoGen提供的内置代理 2 agents chatting 实现“画META 和TESLA 年初至今股票价格”示例 2 agents的具体聊天过程 Reference LLM Powered Autonomous Agents MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework ChatDev: Communicative Agents for Software Development AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation`}).add({id:1,tag:"en",href:"/blogs/distributedtraining/",title:"DistributedTraining",description:"分布式训练",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
-基本流程：
-加载模型、数据至内存；
-创建 DP 模型；
-DP 模型的 forward 过程：
-一个 batch 的数据均分到不同 device 上；
-为每个 device 复制一份模型；
-至此，每个 device 上有模型和一份数据，并行进行前向传播；
-收集各个 device 上的输出；
-每个 device 上的模型反向传播后，收集梯度到主 device 上，更新主 device 上的模型，将模型广播到其他 device 上；
-3-4 循环
-只有一个主进程，主进程下有多个线程
-每个线程管理一个 device 的训练。
-DP 中内存中只存在一份数据，各个线程间共享数据。DP 和 Parameter Server 的方式很像。
-DistributedDataParallel 基本流程
-准备阶段
-环境初始化：在各张卡上初始化进程并建立进程间通信，对应代码：init_process_group。
-模型广播：将模型 parameter、buffer 广播到各节点，对应代码：model = DDP(model).to(local_rank)。
-创建管理器 reducer，给每个参数注册梯度平均 hook。
-准备数据
-加载数据集，创建适用于分布式场景的数据采样器，以防不同节点使用的数据重叠。 训练阶段
-前向传播
-同步各进程状态（parameter 和 buffer）； 当 DDP 参数 find_unused_parameter 为 true 时，其会在 forward 结束时，启动一个回溯，标记未用到的参数，提前将这些设置为 ready。 计算梯度
-reducer 外面：
-各进程各自开始反向计算梯度； 当某个参数的梯度计算好了，其之前注册的 grad hook 就会触发，在 reducer 里把这个参数的状态标记为 ready； reducer 里面：
-当某个 bucket 的所有参数都是 ready 时，reducer 开始对这个 bucket 的所有参数开始一个异步的 all-reduce 梯度平均操作； 当所有 bucket 的梯度平均都结束后，reducer 把得到的平均梯度正式写入到 parameter.grad 里。 优化器应用梯度更新参数。
-DDP 与 DP 的区别 DP DDP 多线程 1. 受到 GIL 的限制 2. 单机工作 多进程 1. 多机多卡 迭代更新 传输数据包括 梯度和参数 1. 全程维护 一个 optimizer 2 梯度汇总到主 GPU, 主 GPU 进行参数更新 3. 主 GPU Broadcast 参数 给其他的 GPU 传输数据包括 梯度 1. 每个进程具有 自己的 optimizer 2. 各进程自己计算梯度 3. Ring All-Reduce 将 梯度 汇总平均 4. 各进程用梯度来独立的更新参数 通信效率 通信成本随着 GPU 数量线性增长 Ring All-Reduce 通信成本恒定，与 GPU 数量无关 DDP 中由于各进程中的模型，初始参数一致 (初始时刻进行一次 broadcast)，而每次用于更新参数的梯度也一致，因此，各进程的模型参数始终保持一致。
-TP (Tensor Parallelism) Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism
-每个张量都被 水平 分成多个块，因此张量的每个分片都位于其指定的 GPU 上，而不是让整个张量驻留在单个 GPU 上。在处理过程中，每个分片在不同的 GPU 上分别并行处理，结果在步骤结束时同步。
-MLP 的并行化 对于输入 X∈R(B×L)×D\\mathbfX \\in \\mathbbR^(B\\times L) \\times D ，它的行数是批量大小 BB 乘以序列长度 LL ，列数是隐藏层的宽度即 DD 。
-为了方便，令 B=1B=1 ，即 X∈RL×D\\mathbfX \\in \\mathbbR^L \\times D MLP 模块里面其实就是两个全连接层
-假定第一个隐藏层的权重是 A∈RD×D′\\mathbf A \\in \\mathbbR^D\\times D^\\prime ( D′D^\\prime 一般是 DD 的 44 倍)，则先做矩阵乘法，然后再接一个激活函数比如 GELU
-假定第二个隐藏层的权重是 B∈RD′×D\\mathbf B \\in \\mathbbR^D^\\prime \\times D ，最终得到 Z=σ(X⋅A)B\\mathbf Z = \\sigma(\\mathbf X \\cdot \\mathbf A) \\mathbf B 为了保证每个数据的完整，避免GPU 之间的通讯：
-对 A∈RD×D′\\mathbf A \\in \\mathbbR^D\\times D^\\prime 按 D′D^\\prime 所在的那一维作拆分（按行切），此时 X\\mathbfX 不需要拆分，直接复制保证每个GPU上都有即可 对 B∈RD′×D\\mathbf B \\in \\mathbbR^D^\\prime \\times D 按 D′D^\\prime 所在的那一维作拆分（按列切）。 将 A\\mathbf A 按行拆分成 nn 份： A=[A1,⋯ ,An]\\mathbf A= \\beginbmatrix\\mathbf A_1,\\cdots, \\mathbf A_n \\endbmatrix ，其中 Ai∈RD×D′n\\mathbf A_i \\in \\mathbbR^D \\times \\fracD^\\primen 。通过执行矩阵乘法得到:
-X⋅A=[XA1,⋯ ,XAn],XAi∈RL×D′n \\mathbf X \\cdot \\mathbf A = \\beginbmatrix\\mathbf X \\mathbf A_1,\\cdots, \\mathbf X\\mathbf A_n \\endbmatrix , \\quad \\mathbf X \\mathbf A_i \\in \\mathbbR^L\\times \\fracD^\\primen 它们可以独立输入GeLU：
-[Y1,⋯ ,Yn]=[GeLU⁡(XA1),⋯ ,GeLU⁡(XAn)],Yi∈RL×D′n \\beginbmatrix\\mathbf Y_1,\\cdots, \\mathbf Y_n\\endbmatrix = \\beginbmatrix\\operatornameGeLU\\left(\\mathbf X \\mathbf A_1\\right),\\cdots, \\operatornameGeLU \\left(\\mathbf X\\mathbf A_n \\right)\\endbmatrix , \\quad \\mathbf Y_i \\in \\mathbbR^L\\times \\fracD^\\primen 将 B\\mathbf B 按列拆分成 nn 份： B=[B1,⋯ ,Bn]⊤\\mathbf B= \\beginbmatrix\\mathbf B_1,\\cdots, \\mathbf B_n \\endbmatrix^\\top ，其中 Bi∈RD′n×D\\mathbf B_i \\in \\mathbfR^\\fracD^\\primen\\times D 。通过执行矩阵乘法得到
-Z=∑inZi=[Y1,⋯ ,Yn][B1,⋯ ,Bn]⊤,Z∈RL×D \\mathbf Z =\\sum_i^n\\mathbf Z_i = \\beginbmatrix\\mathbf Y_1,\\cdots, \\mathbf Y_n\\endbmatrix \\beginbmatrix\\mathbf B_1,\\cdots, \\mathbf B_n \\endbmatrix^\\top , \\quad \\mathbf Z \\in \\mathbbR^L\\times D 通过上述操作，我们可以更新任意深度的 MLP，只需在每个 拆列-拆行 序列之后同步 GPU
-Self-Attention 的并行化 各个头各自计算
-对于输入 X∈R(B×L)×D\\mathbfX \\in \\mathbbR^(B\\times L) \\times D ，它的行数是批量大小 BB 乘以序列长度 LL ，列数是隐藏层的宽度即 DD 。
-为了方便，令 B=1B=1 ，即 X∈RL×D\\mathbfX \\in \\mathbbR^L \\times D 。
-在自注意力机制中，输入 X\\mathbfX 会被复制成三份，分别对应为 X\\mathbfX 的 Q\\mathbf Q 、 K\\mathbf K 、 V\\mathbf V 向量矩阵。
-对于多头注意力，头的维度为 Dh\\fracDh , 假定 h=2h=2 ，之后针对每个头中输入 X\\mathbfX 矩阵中各个单词的 Q\\mathbf Q 向量，会与各自上下文的 K\\mathbf K 向量做缩放点积然后做 Softmax 得到一个注意力分数或权重，之后再与 V\\mathbf V 相乘，得到一个 L×DhL \\times \\fracDh 的输出
-每个头的计算是各自独立并行的，那意味着一个头可以放在 GPU 0 上，另一个头可以放在 GPU 1 上，最后 all reduce 每个头的结果
-由于前向和后向传播中每层都有 22 个 all reduce(MLP+Self-Attention)，因此 TP 需要设备间有非常快速的互联。
-因此，不建议跨多个节点进行 TP。
-如果节点有 44 个 GPU，则最高 TP 度设为 44 比较好。如果需要 TP 度为 88 ，则需要使用至少有 88 个 GPU 的节点
-PP (Pipeline Parallelism) GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism
-模型在多个 GPU 上 垂直 (即按层) 拆分:
-因此只有一个或多个模型层放置在单个 GPU 上。 每个 GPU 并行处理流水线的不同阶段，并处理 batch 把网络分成 44 块，每一块放在一个 GPU 上(不同的颜色表示不同的 GPU)，于是就有了 F0F_0 、 F1F_1 、 F2F_2 、 F3F_3 这 44 个前向路径和 B3B_3 、 B2B_2 、 B1B_1 、 B0B_0 逆序后向路径。
-朴素 PP 方案 在每个时间点只有一台设备在处理计算逻辑，完成计算后将结果发送给下一台设备。
-PP PP 引入了一个新的超参数来调整，称为 块 (chunks)。它定义了通过同一管级按顺序发送多少数据块。图中 chunks=4\\textchunks = 4 .
-GPU 0 在 chunk 0、1、2 和 3 ( F0,0F_0,0 、 F0,1F_0,1 、 F0,2F_0,2 、 F0,3F_0,3 ) 上执行相同的前向路径，然后等待。
-等其他 GPU 完成工作后，GPU 0 会再次开始工作，为块 3、2、1 和 0 ( B0,3B_0,3 、 B0,2B_0,2 、 B0,1B_0,1 、 B0,0B_0,0 ) 执行后向路径。
-请注意，从概念上讲，这与梯度累积 (gradient accumulation steps，GAS) 的意思相同。PyTorch 叫它chunks，而 DeepSpeed 叫它**GAS**。
-梯度累积（Gradient Accumulation） 的主要思想是在计算一个批次的梯度后不立刻更新模型参数，而是累积几个批次后再更新，这样便可以在不增加显存消耗的情况下模拟更大的批次。
-因为 块 (chunks），PP 引入了 micro-batches (MBS) 的概念。
-DP 将全局 batch size 拆分为小 batch size。
-如果 dp_degree=4\\textdp\\_degree = 4 ，则全局 batch_sizeall=1024\\textbatch\\_size_\\textall=1024 将拆分为 44 个小 batch size，每个小batch有 batch_sizedp=1024/4=256\\textbatch\\_size_\\textdp=1024/4 = 256 。
-如果 chunks=32\\textchunks = 32 ，最终得到的 micro batch_size=256/32=8\\textmicro batch\\_size = 256/32= 8 。
-每个管级一次处理一个 micro batch。
-计算 DP + PP 设置的全局批量大小的公式为: mbs∗chunks∗dp_degree (8∗32∗4=1024) \\textmbs*\\textchunks*\\textdp\\_degree (8*32*4=1024) 将 mini-batch 进一步划分成更小的 micro-batch，同时利用 pipipline 方案，每次处理一个 micro-batch 的数据，得到结果后，将该 micro-batch 的结果发送给下游设备，同时开始处理后一个 micro-batch 的数据，通过这套方案减小设备中的 Bubble(设备空闲的时间称为 Bubble)
-ZeRO 数据并行会产生大量冗余 Model States 的空间占用。每个 GPU 都需要存储大语言模型的相同副本，包括模型参数和优化器参数等。但是对于每个 GPU，在模型传播到某一层时，其他层的模型和优化器参数并不参与计算，这导致了严重的显存冗余现象。
-ZeRO 的本质，是在数据并行的基础上，对冗余空间占用进行深度优化
-ZeRO 仅在每个 GPU 上保留部分模型参数和优化器参数，当需要时再从其它 GPU 中读取进行计算，使用完之后便可以释放相应显存。
-显存占用 大规模训练中的显存占用可以分为 Model States 与 Residual states 两部分
-Model States
-Optimizer States Optimizer States 是 Optimizer 在进行梯度更新时所需要用到的数据，例如 SGD 中的 Momentum 以及使用混合精度训练时的 Float32 Master Parameters
-Gradient 在反向传播后所产生的梯度信息，其决定了参数的更新方向。
-Model Parameter 模型参数，也就是我们在整个过程中通过数据“学习”的信息
-在传统DDP下，每个进程都使用同样参数来进行训练。每个进程也会持有对 Optimizer States 的完整拷贝，同样占用了大量显存。
-在混合精度场景下，设模型参数量为 Φ \\mathbf\\Phi , 那么梯度的元素数量为 Φ\\mathbf\\Phi ，模型参数（fp16）、模型梯度（fp16） 和 优化器状态（fp32）总占用 显存：
-(2+2+K)Φ (2 +2+K)\\mathbf\\Phi Residual States
-除了模型状态之外的显存占用，包括 激活值（activation）、各种临时缓冲区（buffer）以及无法使用的显存碎片（fragmentation）
-ZeRO-DP （Model States） ZeRO 有三个不同级别，分别对应对 Model States 不同程度的分割 (Paritition)，图中的 Pos\\textP_\\textos 、 Pos+g\\textP_\\textos+\\textg 、 Pos+g+p\\textP_\\textos+\\textg+\\textp 分别代表 ZeRO-1、ZeRO-2、ZeRO-3
-ZeRO-1 [ Pos\\textP_\\textos ]： 分割 Optimizer States
-模型参数（parameters）和梯度（gradients）仍旧是每张卡保持一份，此时，每张卡的模型状态所需显存是 2Φ+2Φ+K∗ΦNd2\\mathbf\\Phi+2\\mathbf\\Phi+ \\fracK*\\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 4Φ4\\mathbf\\Phi 。
-ZeRO-2 [ Pos+g\\textP_\\textos+\\textg ]： 分割 Optimizer States 与 Gradients
-继续对模型梯度进行分片，模型参数仍旧是每张卡保持一份，此时，每张卡的模型状态所需显存是 2Φ+(2+K)∗ΦNd2\\mathbf\\Phi+ \\frac(2+K)*\\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 2Φ2\\mathbf\\Phi 。
-ZeRO-3 [ Pos+g+p\\textP_\\textos+\\textg+\\textp ]： 分割 Optimizer States、Gradients 与 Parameters
-继续对模型参数进行分片，此时每张卡的模型状态所需显存是 (2+2+K)∗ΦNd\\frac(2+2+K)*\\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 00 。
-ZeRO-1 和 ZeRO-2 并不会带来额外的通讯，但 ZeRO-3 每一次要算 W\\mathbf W 的时候，都得去别的机器拿回来，相当于带来了额外的通讯(增加了 50%)
-ZeRO V.S. 模型并行 ZeRO 是模型并行的形式，数据并行的实质。
-模型并行，是指在 forward 和 backward 的过程中，只需要用自己维护的那块 W\\mathbf W 来计算。
-即 同样的输入 X，每块 GPU 上各算模型的一部分，最后通过某些方式聚合结果。
-ZeRO 做 forward 和 backward 的时候，需要把各 GPU 上维护的 W\\mathbf W 聚合起来。
-即 本质上还是用完整的 W 进行计算。它是不同的输入 X，完整的参数 W，最终再做聚合。
-ZeRO-R（Residual States） PαP_\\alpha : Partitioned Activation Checkpointing
-activation 起到加速梯度计算的作用。
-使用分片方法，并且配合 checkpointing，可以灵活设置 activation的存储。每块 GPU 上只维护部分的 activation，需要时再从别的地方聚合过来就行。需要注意的是，activation 对显存的占用一般会远高于模型本身，通讯量也是巨大的，所以这块要灵活、有效地实验设计。
-CBC_B : Constant Size Buffer 临时缓冲区
-模型训练过程中经常会创建一些大小不等的临时缓冲区，比如对梯度进行 AllReduce。
-解决办法为预先创建一个固定的缓冲区 ，训练过程中不再动态创建，如果要传输的数据较小，则多组数据 bucket 后再一次性传输，提高效率
-固定大小的内存 buffer，它的目的在于：
-提升带宽利用率。当 GPU 数量上升，GPU 间的通讯次数也上升，每次的通讯量可能下降（但总通讯量不会变）。数据切片小了，就不能很好利用带宽了。所以这个 buffer 起到了积攒数据的作用：等数据积攒到一定大小，再进行通讯。
-使得存储大小可控。在每次通讯前，积攒的存储大小是常量，是已知可控的。更方便使用者对训练中的存储消耗和通讯时间进行预估。
-MDM_D : Memory Defragmentation 显存碎片
-显存出现碎片的一大原因是 gradient checkpointing 后，不断地创建和销毁那些不保存的激活值。
-解决方法是预先分配一块连续的显存，将常驻显存的模型状态和 checkpointed activation 存在里面，剩余显存用于动态创建和销毁 discarded activation。
-设置机制，对碎片化的存储空间进行重新整合，整出连续的存储空间。防止出现总存储足够，但连续存储不够而引起的存储请求 fail
-ZeRO-Offload forward 和 backward 计算量高，因此和它们相关的部分，例如参数 W（fp16），activation，就全放入 GPU。
-update 的部分计算量低，因此和它相关的部分，全部放入 CPU 中。例如 W(fp32)，optimizer states（fp32）和 gradients(fp16)等。
-混合精度 Mixed Precision Training
-混合精度训练，指代的是单精度 float（ 3232 bit， 44 个字节）和半精度 float16（ 1212 bit， 22 个字节） 混合。
-半精度 半精度优点：
-内存占用更少： 通用的模型 fp16 占用的内存只需原来的一半：
-模型占用的内存更小，训练的时候可以用更大的 batchsize。 模型训练时，通信量（特别是多卡，或者多机多卡）大幅减少，大幅减少等待时间，加快数据的流通。 计算更快：
-目前的不少 GPU 都有针对 fp16 的计算进行优化。论文指出：在近期的 GPU 中，半精度的计算吞吐量可以是单精度的 2-8 倍； 半精度问题
-数据溢出 Overflow / Underflow：对于深度学习而言，最大的问题在于 Underflow（下溢出），在训练后期，例如激活函数的梯度会非常小， 甚至在梯度乘以学习率后，值会更加小。 舍入误差 Rounding Error 混合精度训练（Mixed Precision 利用 fp16 进行乘法和存储，利用 fp32 来进行加法计算。这样可以减少加法过程中的舍入误差，保证精度不损失
-在模型矩阵乘法的过程中，利用 fp32 来进行矩阵乘法中间的累加(accumulated) 然后再将 fp32 的值转化为 fp16 进行存储。 FP32 权重备份 主要用于解决舍入误差的问题。
-weights, activations, gradients 等数据在训练中都 利用 fp16 来存储
-fp32 额外拷贝一份 weight 会新增加训练时候存储的占用。
-实际训练过程中，内存中占据大部分的基本都是 activations 的值。特别是在 batchsize 很大的情况下， activations 更是特别占据空间。 保存 activiations 主要是为了在 back-propogation 的时候进行计算。因此，只要 activation 的值基本都是使用 fp16 来进行存储的话，则最终模型与 fp32 相比起来， 内存占用也基本能够减半。
-拷贝一份 fp32 的 weights，用于更新。
-在更新权重的时候， weightt=weightt−1+lr∗gradients \\textweight_t= \\text weight_t-1+ \\textlr * \\textgradients ，而在深度模型中， lr∗gradients \\textlr * \\textgradients 往往非常小，如果利用 fp16 来进行相加的话， 则很可能会出现 舍入误差 Rounding Error，导致更新无效。
-通过将 weights 拷贝成 fp32 格式，并且确保整个更新（update）过程在 fp32 格式下进行
-损失放大 Loss Scale 主要用于解决 fp16 underflow 的问题。
-训练到了后期，梯度（特别是激活函数平滑段的梯度）会特别小，fp16 表示容易产生 underflow 现象。
-Loss Scale
-对计算出来的 loss 值进行 scale，由于链式法则的存在，loss 上的 scale 也会作用在梯度上。这样比起对每个梯度进行 scale 更加划算。 scaled 过后的梯度，就会平移到 fp16 有效的展示范围内。
-反向传播前 ，将损失变化（dLoss）手动增大 2k2^k 倍，因此反向传播时得到的中间变量（激活函数梯度）则不会溢出； 反向传播后，将权重梯度缩 2k2^k 倍，恢复正常值。 这样，scaled-gradient 就可以一直使用 fp16 进行存储了。只有在进行更新的时候，才会将 scaled-gradient 转化为 fp32，同时将 scale 抹去。`}).add({id:2,tag:"en",href:"/blogs/flashattention/",title:"FlashAttention",description:"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",content:`Background Structure of GPU Memory 在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 越上层空间越小 但是 速度越快
+自定义AutoGen提供的内置代理 2 agents chatting 实现“画META 和TESLA 年初至今股票价格”示例 2 agents的具体聊天过程 Reference LLM Powered Autonomous Agents MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework ChatDev: Communicative Agents for Software Development AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation`}).add({id:1,tag:"en",href:"/blogs/flashattention/",title:"FlashAttention",description:"FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",content:`Background Structure of GPU Memory 在 GPU 当中，memory 也跟 CPU memory 一样分成不同的 level，通常 越上层空间越小 但是 速度越快
 HBM：平常主要提到的 GPU memory 通常是指 high bandwidth memory (HBM)
 A100 的 HBM 大概 4040 GB~ 8080 GB， HBM 的bandwidth为 1.51.5 – 2.02.0 TB/s。 SRAM：再往上一层的 memory 称为 SRAM
 总容量 192KB×108192 \\textKB \\times 108 (streaming multi-processors) ， bandwidth 可以达到 1919 TB/s 因此当有运算需要从 HBM 当中不断读写资料的时候，这样的速度差就容易导致 HBM 的读取变成整体效能的 bottleneck。
@@ -281,7 +162,7 @@ Bc×d=O(M)⇔Bc=O(Md) \\beginalign B_c \\times d = O(M) \\Leftrightarrow B_c = O
 Br×d=O(M)⇔Br=O(Md) \\beginalign B_r \\times d = O(M) \\Leftrightarrow B_r = O(\\fracMd) \\endalign 需要将 Sij∈RBr×Bc\\mathbf S_ij \\in R^B_r \\times B_c 放到 SRAM 里，因此
 BrBc=O(M) \\beginalign B_rB_c = O(M) \\endalign 因此设置：
 Bc=O(Md),Br=O(min⁡(Md,MBc))=O(min⁡(Md,d)) \\beginalign B_c &amp;= O(\\fracMd), \\\\ B_r &amp;= O\\bigg(\\min(\\fracMd, \\fracMB_c)\\bigg)= O\\bigg(\\min(\\fracMd , d)\\bigg) \\endalign 因此有：
-Tc=NBc=O(NdM) \\beginalign T_c =\\fracNB_c= O(\\fracNdM) \\endalign 所以： O(NdTc)=O(N2d2)M)O(NdT_c)=O(\\fracN^2d^2)M) Reference FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness`}).add({id:3,tag:"en",href:"/blogs/lsh/",title:"LSH",description:"LSH (Locality-Sensitive Hashing, 局部敏感哈希) 算法",content:`在 Top N 推荐中，我们需要处理的是大量高维度的数据，如何快速地从大量的高维度数据集中找出与某条数据最为接近的一条或多条数据成为了难题。
+Tc=NBc=O(NdM) \\beginalign T_c =\\fracNB_c= O(\\fracNdM) \\endalign 所以： O(NdTc)=O(N2d2)M)O(NdT_c)=O(\\fracN^2d^2)M) Reference FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness`}).add({id:2,tag:"en",href:"/blogs/lsh/",title:"LSH",description:"LSH (Locality-Sensitive Hashing, 局部敏感哈希) 算法",content:`在 Top N 推荐中，我们需要处理的是大量高维度的数据，如何快速地从大量的高维度数据集中找出与某条数据最为接近的一条或多条数据成为了难题。
 如果只是一些小规模的低维度数据集，可以很容易地使用线性搜索来解决问题；但如果我们要在一个庞大的高维度数据集中使用线性搜索来进行匹配，则会消耗很多时间。
 因此，需要采取一些类似于索引的技术来加速查询过程，这些技术通常被统称为 最近邻查找 (Nearest Neighbor, NN) ，而在处理大规模数据时，还可以考虑采用 近似最近邻查找 (Approximate Nearest Neighbor, ANN)。其中一种常用的方法就是局部敏感哈希 (Locality-Sensitive Hashing, LSH)。
 Hash Hash一般翻译做 散列，就是把任意长度的输入（又叫做 预映射， pre-image），通过散列算法，变换成固定长度的输出，该输出就是散列值。
@@ -385,7 +266,7 @@ Pr[h(x)=h(y)]=1−d(x,y) \\mathrmPr\\Big[h(x) = h (y)\\Big] = 1-d(x,y) Jaccard �
 对于 h=[h1,⋯ ,hr]∈H′\\mathbf h = [h_1, \\cdots, h_r ] \\in \\mathcal H&#x27; ， 定义 h(x)=h(y)\\mathbf h(x) = \\mathbf h(y) 当且仅当 hi(x)=hi(y) ∀ i, 1≤i≤rh_i(x) = h_i(y) \\ \\forall \\ i, \\ 1\\le i \\le r （相当于band的长度 rr ）
 【定理】
 如果 H\\mathcal H 是 (d1,d2,p1,p2)(d_1,d_2,p_1,p_2) -sensitive 族，那么 H′\\mathcal H&#x27; 是 (d1,d2,(p1)r,(p2)r)(d_1,d_2,(p_1)^r,(p_2)^r) -sensitive 族
-Reference https://web.stanford.edu/class/cs246/slides/03-lsh.pdf https://web.stanford.edu/class/cs246/slides/04-lsh_theory.pdf 推荐算法学习（十三）：LSH近似最近邻查找`}).add({id:4,tag:"en",href:"/blogs/pythontools/",title:"PythonTools",description:"多种 Python 工具包括其功能、使用方法和示例代码，涵盖了数据处理、界面构建、字符编码检测、终端文本美化等多个方面。",content:`Tools Docstring Parser docstring_parser
+Reference https://web.stanford.edu/class/cs246/slides/03-lsh.pdf https://web.stanford.edu/class/cs246/slides/04-lsh_theory.pdf 推荐算法学习（十三）：LSH近似最近邻查找`}).add({id:3,tag:"en",href:"/blogs/pythontools/",title:"PythonTools",description:"多种 Python 工具包括其功能、使用方法和示例代码，涵盖了数据处理、界面构建、字符编码检测、终端文本美化等多个方面。",content:`Tools Docstring Parser docstring_parser
 docstring_parser将 Python 文档字符串解析。目前支持 ReST、Google、Numpydoc 风格和 Epydoc 风格的文档字符串。
 1 from docstring_parser import parse 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 docstring = parse( &#39;&#39;&#39; Short description Long description spanning multiple lines - First line - Second line - Third line :param name: description 1 :param int priority: description 2 :param str sender: description 3 :raises ValueError: if name is invalid &#39;&#39;&#39; ) 1 2 docstring.long_description # &#39;Long description spanning multiple lines\\n - First line\\n - Second line\\n - Third line&#39; 1 2 docstring.short_description # &#39;Short description&#39; 1 2 3 4 docstring.params # [&lt;docstring_parser.common.DocstringParam at 0x1a67269ea10&gt;, # &lt;docstring_parser.common.DocstringParam at 0x1a67269eb30&gt;, # &lt;docstring_parser.common.DocstringParam at 0x1a67269eb60&gt;] 1 2 3 4 5 6 7 vars(docstring.params[0]) # &#39;args&#39;: [&#39;param&#39;, &#39;name&#39;], # &#39;description&#39;: &#39;description 1&#39;, # &#39;arg_name&#39;: &#39;name&#39;, # &#39;type_name&#39;: None, # &#39;is_optional&#39;: None, # &#39;default&#39;: None 1 2 docstring.params[1].type_name # &#39;int&#39; Ftfy ftfy
 ftfy: fixes text for you。ftfy修复了以各种方式破坏的Unicode。ftfy的目标是接收坏的Unicode并输出好的Unicode，以便在您的Unicode感知代码中使用.
@@ -423,7 +304,7 @@ Fore是针对字体颜色，Back是针对字体背景颜色，Style是针对字�
 Fore: BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET.
 Back: BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET.
 Style: DIM, NORMAL, BRIGHT, RESET_ALL
-1 from colorama import Fore, Back, Style, init 1 2 3 4 5 6 # 初始化，并且设置颜色设置自动恢复 # 如果未设置 autoreset=True，需要使用如下代码重置终端颜色为初始设置 # Fore.RESET # Back.RESET # Style.RESET_ALL init(autoreset=True) 1 2 f&#34;Fore.LIGHTGREEN_EXsome red text&#34; # &#39;\\x1b[92msome red text&#39; 1 2 f&#34;Back.GREENand with a green background&#34; # &#39;\\x1b[42mand with a green background&#39; 1 2 f&#34;Style.DIMand in dim text&#34; # &#39;\\x1b[2mand in dim text&#39;`}).add({id:5,tag:"en",href:"/blogs/python%E5%9F%BA%E7%A1%80/",title:"Python基础",description:"Python基础",content:`赋值、浅 copy、深 copy 赋值：相当于多贴了一个标签（引用），指向同一个对象，引用计数 +1。
+1 from colorama import Fore, Back, Style, init 1 2 3 4 5 6 # 初始化，并且设置颜色设置自动恢复 # 如果未设置 autoreset=True，需要使用如下代码重置终端颜色为初始设置 # Fore.RESET # Back.RESET # Style.RESET_ALL init(autoreset=True) 1 2 f&#34;Fore.LIGHTGREEN_EXsome red text&#34; # &#39;\\x1b[92msome red text&#39; 1 2 f&#34;Back.GREENand with a green background&#34; # &#39;\\x1b[42mand with a green background&#39; 1 2 f&#34;Style.DIMand in dim text&#34; # &#39;\\x1b[2mand in dim text&#39;`}).add({id:4,tag:"en",href:"/blogs/python%E5%9F%BA%E7%A1%80/",title:"Python基础",description:"Python基础",content:`赋值、浅 copy、深 copy 赋值：相当于多贴了一个标签（引用），指向同一个对象，引用计数 +1。
 浅拷贝：会开辟新的内存地址存储 被拷贝对象的外层对象，但是 不拷贝内层的对象，不能算一个完整的拷贝副本。
 深拷贝：会开辟新的内存地址存储被拷贝对象的外层对象，同时 对于内层对象也会递归拷贝，即是一个完整的拷贝副本。
 赋值 不可变对象被重新赋值，重新分配了一块内存，ID 就变了
@@ -607,7 +488,7 @@ asyncio.create_task() 函数用来 并发运行 作为 asyncio 任务 的多个�
 银行家算法：分配资源之前先看清楚，资源分配后是否会导致系统死锁。如果会死锁，则不分配，否则就分配。要求每个进程必须先知道资源的最大需求量，且在系统运行过程中，考察每个进程对各类资源的申请需要花费较多的时间。
 进程间通信方式：
 管道、共享存储器系统、消息传递系统、信号量
-mutex 是互斥锁`}).add({id:6,tag:"en",href:"/blog/quick_start/",title:"QuickStart",description:"This is QuickStart.",content:`在 quickstart 目录中为您的项目创建目录结构。
+mutex 是互斥锁`}).add({id:5,tag:"en",href:"/blog/quick_start/",title:"QuickStart",description:"This is QuickStart.",content:`在 quickstart 目录中为您的项目创建目录结构。
 添加内容 向您的网站添加一个新页面。
 1 hugo new content/posts/my-first-post.md 启动 Hugo 的开发服务器以查看网站
 1 hugo server -D Mathematics in Markdown Step Step 1 在 hugo.toml 文件中配置
@@ -620,7 +501,7 @@ layouts/_default/baseof.html
 更新 layouts/_default/_markup/render-passthrough.html 文件
 修改 render-passthrough.html 文件中的渲染逻辑，区分 inline 和 display 数学公式，并根据类型应用适当的 MathJax 渲染方式。
 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26  $opts := dict   if eq .Type &#34;block&#34;   $opts = dict &#34;displayMode&#34; true   end   with try (transform.ToMath .Inner $opts)   with .Err   errorf &#34;Failed to render MathJax: %q. See %s&#34; . $.Position   else   $rendered := .Value  &lt;!-- 区分 inline 和 display --&gt;  if $opts.displayMode  &lt;!-- 块级公式，MathJax 渲染 --&gt; &lt;div class=&#34;mathjax-display&#34;&gt;  $rendered  &lt;/div&gt;  else  &lt;!-- 行内公式，MathJax 渲染 --&gt; &lt;span class=&#34;mathjax-inline&#34;&gt;  $rendered  &lt;/span&gt;  end   end   end  修改 assets/scss/components/_math.scss
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 // 行内数学公式样式 .mathjax-inline  display: inline-block; // 保持在同一行 font-size: 100%; // 适中字体大小 vertical-align: middle; // 垂直居中 padding: 0.2em 0.4em; // 给公式添加内边距，让公式更显眼 margin: 0; // 不增加外边距 color: $primary; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式，确保易读性  // 块级数学公式样式 .mathjax-display  display: block; // 占据整行 font-size: 100%; margin: 20px 0; // 上下外边距，增加间距 padding: 0.5em; // 给公式增加一些内边距 text-align: center; // 居中显示公式 color: #1a73e8; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式 border: 1px solid #e0e0e0; // 为块级公式添加边框，增加区分度 border-radius: 8px; // 圆角效果 background-color: #f4f6f9; // 背景色，使块级公式更加显眼 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // 阴影效果，提升层次感`}).add({id:7,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 // 行内数学公式样式 .mathjax-inline  display: inline-block; // 保持在同一行 font-size: 100%; // 适中字体大小 vertical-align: middle; // 垂直居中 padding: 0.2em 0.4em; // 给公式添加内边距，让公式更显眼 margin: 0; // 不增加外边距 color: $primary; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式，确保易读性  // 块级数学公式样式 .mathjax-display  display: block; // 占据整行 font-size: 100%; margin: 20px 0; // 上下外边距，增加间距 padding: 0.5em; // 给公式增加一些内边距 text-align: center; // 居中显示公式 color: #1a73e8; // 设置颜色，可根据需求修改 font-family: &#34;Times New Roman&#34;, serif; // 字体样式 border: 1px solid #e0e0e0; // 为块级公式添加边框，增加区分度 border-radius: 8px; // 圆角效果 background-color: #f4f6f9; // 背景色，使块级公式更加显眼 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); // 阴影效果，提升层次感`}).add({id:6,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
 绝对位置编码：位置索引 直接进行编码。一般都是直接构建 词嵌入向量 和 位置嵌入向量 直接相加。
 Transformer 中的 Sinusoidal 位置编码
 BERT 和 GPT 中的 训练式位置编码
@@ -762,7 +643,7 @@ fb(m)=∑i=0d/2−1cos⁡mb−2i/d≈∫01cos⁡mb−sds=令t=mb−s∫mb−1mco
 fb(m)≈Ci(m)−Ci(mb−1)ln⁡b \\beginequationf_b(m) \\approx \\frac\\textCi(m) - \\textCi(mb^-1)\\ln b\\endequation Ci(x)\\textCi(x) 的第一个零点 x0=0.6165⋯x_0=0.6165\\cdots 对于 m≥1m \\ge 1 ， ∣Ci(m)∣≤1/2|\\textCi(m)|\\leq 1/2 ，可以忽略
 考虑 Ci(mb−1)≤0m∈0,1,2,⋯ ,L−1\\textCi(mb^-1)\\leq 0 \\quad m\\in\\0,1,2,\\cdots,L-1\\ ，因此需要 mb−1∈[0,x0]⟹b≥mx0mb^-1 \\in [0,x_0] \\Longrightarrow b\\ge \\fracmx_0 ，即
 b≥Lx0≈2L b\\ge \\fracLx_0 \\approx 2L 这个结果比精确的数值结果要小，因为它对应于 d→∞d \\rightarrow \\infin ，无限个三角函数叠加会使得函数图像的震荡更少，看起来更加平稳（相比于有限的 dd ），从而对于固定的 bb ， fb(m)f_b(m) 的连续非负区间更长，或者反过来，对于固定的 LL ，保持 m=0,1,2,⋯ ,L−1m=0,1,2,\\cdots,L-1 的 fb(m)f_b(m) 都非负的 bb 更小。
-Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:8,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
+Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:7,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
 查询建议（SUG）：用户点击搜索之前，搜索引擎会给出的相关词，如用户输入“深度学习”，SUG 可能为“深度学习框架”、“深度学习教程”等等。
 作用是让搜索引擎用起来更方便。
 文档：搜索结果，如网页链接（Google、百度）、商品（Amazon、淘宝）、视频（YouTube、B 站）
@@ -1113,7 +994,7 @@ value：文档列表，每个查询词都对应很多篇文档，由于离线做
 【思考题】
 【问题】：搜索引擎的时效性很差，该从哪些方面改进？
 【提示】：查询词处理、召回、排序分别能做什么？
-Reference https://github.com/wangshusen/SearchEngine`}).add({id:9,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:8,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
 制定标注规则→标注数据 → 训练模型→线上推理 \\text制定标注规则 \\rightarrow \\text标注数据  \\rightarrow \\text 训练模型 \\rightarrow \\text线上推理  搜索产品和搜索算法团队定义相关性标注规则。
 人为将 (q,d)(q,d) 的相关性划分为 44 个或 55 个（如百度）档位。后以 44 个为例。
 相关性分档规则非常重要，假如日后有大幅变动，需要重新标注数据，丢弃积累的数据。
@@ -1502,7 +1383,7 @@ Student 小模型要先预热、再蒸馏。
 后预训练（post pretrain）：用一个 GBDT 小模型自动生成数据，将用户行为 x\\mathrmx 映射到相关性标签 y^\\haty 。用自动生成的数据训练 BERT 大模型和小模型，结合回归任务排序任务以及预训练任务。
 微调（fine tuning）：使用人工标注的数据，数据量相对较小，一般几十万（最多几百万）条样本，监督学习，同时用回归和排序任务。
 蒸馏（distillation）：先训练大模型，用训练好的大模型给几亿条 (q,d)(q, d) 打分，得到蒸馏数据；基于预热好的小模型，用蒸馏数据做监督学习；最终得到的小模型部署到线上做相关性。
-Reference https://github.com/wangshusen/SearchEngine`}).add({id:10,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:9,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
 Encoder（左边）：负责理解输入文本，为每个输入构造对应的语义表示（语义特征）； Decoder（右边）：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。 这两个模块可以根据任务的需求而单独使用：
 纯 Encoder 模型：适用于只需要理解输入语义的任务，例如句子分类、命名实体识别； 纯 Decoder 模型：适用于生成式任务，例如文本生成； Encoder-Decoder 模型 或 Seq2Seq 模型： 适用于需要基于输入的生成式任务，例如翻译、摘要。 Transformer 家族 Encoder 分支 纯 Encoder 模型只使用 Transformer 模型中的 Encoder 模块，也被称为自编码 (auto-encoding) 模型。在每个阶段，注意力层都可以访问到原始输入句子中的所有词语，即具有 “双向 (Bi-directional)”注意力。
 纯 Encoder 模型通常通过破坏给定的句子（例如随机遮盖其中的词语），然后让模型进行重构来进行预训练，最适合处理那些需要理解整个句子语义的任务，例如句子分类、命名实体识别（词语分类）、抽取式问答。
@@ -1614,7 +1495,7 @@ Warmup 是在训练开始阶段，将学习率从 0 缓增到指定大小，而�
 如果不进行 Wamrup，那么模型一开始就快速地学习，由于梯度消失，模型对越靠后的层越敏感，也就是越靠后的层学习得越快，然后后面的层是以前面的层的输出为输入的，前面的层根本就没学好，所以后面的层虽然学得快，但却是建立在糟糕的输入基础上的。
 很快地，后面的层以糟糕的输入为基础到达了一个糟糕的局部最优点，此时它的学习开始放缓（因为已经到达了它认为的最优点附近），同时反向传播给前面层的梯度信号进一步变弱，这就导致了前面的层的梯度变得不准。但Adam 的更新量是常数量级的，梯度不准，但更新量依然是数量级，意味着可能就是一个常数量级的随机噪声了，于是学习方向开始不合理，前面的输出开始崩盘，导致后面的层也一并崩盘。
 如果 Post Norm 结构的模型不进行 Wamrup，我们能观察到的现象往往是：loss 快速收敛到一个常数附近，然后再训练一段时间，loss 开始发散，直至 NAN。 如果进行 Wamrup，那么留给模型足够多的时间进行“预热”，在这个过程中，主要是抑制了后面的层的学习速度，并且给了前面的层更多的优化时间，以促进每个层的同步优化。 这里的讨论前提是梯度消失，如果是 Pre Norm 之类的结果，没有明显的梯度消失现象，那么不加 Warmup 往往也可以成功训练。
-Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:11,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
+Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:10,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
 KV Cache 只能用于 Decoder 架构的模型，因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 KK 和 VV 可以缓存起来。
 KV Cache 推理过程 假设模型初始输入只有 11 个 token
 Att(Q,K,V)=softmax(q1k1⊤)v1 \\mathrmAtt(Q, K, V) = \\textsoftmax(\\mathbfq_1 \\mathbfk_1^\\top ) \\mathbfv_1 其中 : Q=(q1)∈R1×dQ = \\left( \\mathbfq_1 \\right) \\in \\mathbbR^1\\times d ， K=(k1)∈R1×dK = \\left( \\mathbfk_1 \\right) \\in \\mathbbR^1\\times d ， V=(v1)∈R1×dV = \\left( \\mathbfv_1 \\right) \\in \\mathbbR^1\\times d 当模型生成第 22 个 token 时，Attention 的计算如下：
@@ -1701,7 +1582,154 @@ BL⋅(512+64)=576⋅BLBL \\cdot (512+64) = 576 \\cdot BL forward
 MoveElision 优化策略: 省略此处的拼接 RoPE 部分和非 RoPE 部分的过程，而是直接分别计算量部分的额 Attention Score 并相加（考虑 qtkj⊤=qtCkjC⊤+qtRkjR⊤\\mathbfq_t\\mathbfk_j^\\top = \\mathbfq_t^C \\mathcalk_j^C^\\top+ \\mathbfq_t^R k_j^R^\\top )
 1 2 3 4 5 6 7 8 9 # MoveElision [B, 128, L, 512]*[B, 128, L, 512] + [B, 128, L, 64]*[B, 128, L, 64] attn_weights = ( torch.matmul(q_pe, k_pe.mT) + torch.matmul(q_nope, compressed_kv.unsqueeze(-3).mT) ) * self.softmax_scale attn_weights = nn.functional.softmax( attn_weights, dim=-1, dtype=torch.float32 ).to(q_nope.dtype) attn_output = torch.einsum(&#39;bhql,blc-&gt;bhqc&#39;, attn_weights, compressed_kv) attn_output = torch.einsum(&#39;bhqc,dhc-&gt;bqd&#39;, attn_output, out_absorbed) 作者认为没有必要再改变顺序，对模型参数进行预处理，将 WUKW^UK 与 WUQW^UQ 相乘，以及将 WUVW^UV 与 WOW^O 相乘。
 这是因为， WUKW^UK 与 WUQW^UQ 相乘后的结果可以视为 HH 个大小为 1536×5121536 \\times 512 的低秩（不超过 128）矩阵，而 WUVW^UV 与 WOW^O 相乘的结果可以视为 HH 个大小为 5120×5125120 \\times 512 的低秩矩阵。相比用这些特别大的低秩矩阵做投影，明显不如按照低秩分解形式依次相乘来得划算。
-Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:12,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
+Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:11,tag:"en",href:"/blogs/distributedtraining/",title:"分布式训练",description:"DP & DDP，TP，PP，ZeRO，混合精度，通讯",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
+基本流程：
+加载模型、数据至内存；
+创建 DP 模型；
+DP 模型的 forward 过程：
+一个 batch 的数据均分到不同 device 上；
+为每个 device 复制一份模型；
+至此，每个 device 上有模型和一份数据，并行进行前向传播；
+收集各个 device 上的输出；
+每个 device 上的模型反向传播后，收集梯度到主 device 上，更新主 device 上的模型，将模型广播到其他 device 上；
+3-4 循环
+只有一个主进程，主进程下有多个线程
+每个线程管理一个 device 的训练。
+DP 中内存中只存在一份数据，各个线程间共享数据。DP 和 Parameter Server 的方式很像。
+DistributedDataParallel 基本流程
+准备阶段
+环境初始化：在各张卡上初始化进程并建立进程间通信，对应代码：init_process_group。
+模型广播：将模型 parameter、buffer 广播到各节点，对应代码：model = DDP(model).to(local_rank)。
+创建管理器 reducer，给每个参数注册梯度平均 hook。
+准备数据
+加载数据集，创建适用于分布式场景的数据采样器，以防不同节点使用的数据重叠。 训练阶段
+前向传播
+同步各进程状态（parameter 和 buffer）； 当 DDP 参数 find_unused_parameter 为 true 时，其会在 forward 结束时，启动一个回溯，标记未用到的参数，提前将这些设置为 ready。 计算梯度
+reducer 外面：
+各进程各自开始反向计算梯度； 当某个参数的梯度计算好了，其之前注册的 grad hook 就会触发，在 reducer 里把这个参数的状态标记为 ready； reducer 里面：
+当某个 bucket 的所有参数都是 ready 时，reducer 开始对这个 bucket 的所有参数开始一个异步的 all-reduce 梯度平均操作； 当所有 bucket 的梯度平均都结束后，reducer 把得到的平均梯度正式写入到 parameter.grad 里。 优化器应用梯度更新参数。
+DDP 与 DP 的区别 DP DDP 多线程 1. 受到 GIL 的限制 2. 单机工作 多进程 1. 多机多卡 迭代更新 传输数据包括 梯度和参数 1. 全程维护 一个 optimizer 2 梯度汇总到主 GPU, 主 GPU 进行参数更新 3. 主 GPU Broadcast 参数 给其他的 GPU 传输数据包括 梯度 1. 每个进程具有 自己的 optimizer 2. 各进程自己计算梯度 3. Ring All-Reduce 将 梯度 汇总平均 4. 各进程用梯度来独立的更新参数 通信效率 通信成本随着 GPU 数量线性增长 Ring All-Reduce 通信成本恒定，与 GPU 数量无关 DDP 中由于各进程中的模型，初始参数一致 (初始时刻进行一次 broadcast)，而每次用于更新参数的梯度也一致，因此，各进程的模型参数始终保持一致。
+TP (Tensor Parallelism) Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism
+每个张量都被 水平 分成多个块，因此张量的每个分片都位于其指定的 GPU 上，而不是让整个张量驻留在单个 GPU 上。在处理过程中，每个分片在不同的 GPU 上分别并行处理，结果在步骤结束时同步。
+MLP 的并行化 对于输入 X∈R(B×L)×D\\mathbfX \\in \\mathbbR^(B\\times L) \\times D ，它的行数是批量大小 BB 乘以序列长度 LL ，列数是隐藏层的宽度即 DD 。
+为了方便，令 B=1B=1 ，即 X∈RL×D\\mathbfX \\in \\mathbbR^L \\times D MLP 模块里面其实就是两个全连接层
+假定第一个隐藏层的权重是 A∈RD×D′\\mathbf A \\in \\mathbbR^D\\times D^\\prime ( D′D^\\prime 一般是 DD 的 44 倍)，则先做矩阵乘法，然后再接一个激活函数比如 GELU
+假定第二个隐藏层的权重是 B∈RD′×D\\mathbf B \\in \\mathbbR^D^\\prime \\times D ，最终得到 Z=σ(X⋅A)B\\mathbf Z = \\sigma(\\mathbf X \\cdot \\mathbf A) \\mathbf B 为了保证每个数据的完整，避免GPU 之间的通讯：
+对 A∈RD×D′\\mathbf A \\in \\mathbbR^D\\times D^\\prime 按 D′D^\\prime 所在的那一维作拆分（按行切），此时 X\\mathbfX 不需要拆分，直接复制保证每个GPU上都有即可 对 B∈RD′×D\\mathbf B \\in \\mathbbR^D^\\prime \\times D 按 D′D^\\prime 所在的那一维作拆分（按列切）。 将 A\\mathbf A 按行拆分成 nn 份： A=[A1,⋯ ,An]\\mathbf A= \\beginbmatrix\\mathbf A_1,\\cdots, \\mathbf A_n \\endbmatrix ，其中 Ai∈RD×D′n\\mathbf A_i \\in \\mathbbR^D \\times \\fracD^\\primen 。通过执行矩阵乘法得到:
+X⋅A=[XA1,⋯ ,XAn],XAi∈RL×D′n \\mathbf X \\cdot \\mathbf A = \\beginbmatrix\\mathbf X \\mathbf A_1,\\cdots, \\mathbf X\\mathbf A_n \\endbmatrix , \\quad \\mathbf X \\mathbf A_i \\in \\mathbbR^L\\times \\fracD^\\primen 它们可以独立输入GeLU：
+[Y1,⋯ ,Yn]=[GeLU⁡(XA1),⋯ ,GeLU⁡(XAn)],Yi∈RL×D′n \\beginbmatrix\\mathbf Y_1,\\cdots, \\mathbf Y_n\\endbmatrix = \\beginbmatrix\\operatornameGeLU\\left(\\mathbf X \\mathbf A_1\\right),\\cdots, \\operatornameGeLU \\left(\\mathbf X\\mathbf A_n \\right)\\endbmatrix , \\quad \\mathbf Y_i \\in \\mathbbR^L\\times \\fracD^\\primen 将 B\\mathbf B 按列拆分成 nn 份： B=[B1,⋯ ,Bn]⊤\\mathbf B= \\beginbmatrix\\mathbf B_1,\\cdots, \\mathbf B_n \\endbmatrix^\\top ，其中 Bi∈RD′n×D\\mathbf B_i \\in \\mathbfR^\\fracD^\\primen\\times D 。通过执行矩阵乘法得到
+Z=∑inZi=[Y1,⋯ ,Yn][B1,⋯ ,Bn]⊤,Z∈RL×D \\mathbf Z =\\sum_i^n\\mathbf Z_i = \\beginbmatrix\\mathbf Y_1,\\cdots, \\mathbf Y_n\\endbmatrix \\beginbmatrix\\mathbf B_1,\\cdots, \\mathbf B_n \\endbmatrix^\\top , \\quad \\mathbf Z \\in \\mathbbR^L\\times D 通过上述操作，我们可以更新任意深度的 MLP，只需在每个 拆列-拆行 序列之后同步 GPU
+Self-Attention 的并行化 各个头各自计算
+对于输入 X∈R(B×L)×D\\mathbfX \\in \\mathbbR^(B\\times L) \\times D ，它的行数是批量大小 BB 乘以序列长度 LL ，列数是隐藏层的宽度即 DD 。
+为了方便，令 B=1B=1 ，即 X∈RL×D\\mathbfX \\in \\mathbbR^L \\times D 。
+在自注意力机制中，输入 X\\mathbfX 会被复制成三份，分别对应为 X\\mathbfX 的 Q\\mathbf Q 、 K\\mathbf K 、 V\\mathbf V 向量矩阵。
+对于多头注意力，头的维度为 Dh\\fracDh , 假定 h=2h=2 ，之后针对每个头中输入 X\\mathbfX 矩阵中各个单词的 Q\\mathbf Q 向量，会与各自上下文的 K\\mathbf K 向量做缩放点积然后做 Softmax 得到一个注意力分数或权重，之后再与 V\\mathbf V 相乘，得到一个 L×DhL \\times \\fracDh 的输出
+每个头的计算是各自独立并行的，那意味着一个头可以放在 GPU 00 上，另一个头可以放在 GPU 11 上，最后 all reduce 每个头的结果
+由于前向和后向传播中每层都有 22 个 all reduce( MLP+Self-Attention )，因此 TP 需要设备间有非常快速的互联。
+因此，不建议跨多个节点进行 TP。
+如果节点有 44 个 GPU，则最高 TP 度设为 44 比较好。如果需要 TP 度为 88 ，则需要使用至少有 88 个 GPU 的节点。
+PP (Pipeline Parallelism) GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism
+模型在多个 GPU 上 垂直 (即按层) 拆分:
+因此只有一个或多个模型层放置在单个 GPU 上。 每个 GPU 并行处理流水线的不同阶段，并处理 batch 的一部分数据。 把网络分成 44 块，每一块放在一个 GPU 上(不同的颜色表示不同的 GPU)，于是就有了 F0F_0 、 F1F_1 、 F2F_2 、 F3F_3 这 44 个前向路径和 B3B_3 、 B2B_2 、 B1B_1 、 B0B_0 逆序后向路径。
+朴素 PP 方案 在每个时间点只有一台设备在处理计算逻辑，完成计算后将结果发送给下一台设备。
+PP PP 引入了一个新的超参数来调整，称为 块 (chunks)。它定义了通过同一管级按顺序发送多少数据块。图中 chunks=4\\textchunks = 4 。
+GPU 00 在 chunk 00 、 11 、 22 和 33 ( F0,0F_0,0 、 F0,1F_0,1 、 F0,2F_0,2 、 F0,3F_0,3 ) 上执行相同的前向路径，然后等待。
+等其他 GPU 完成工作后，GPU 00 会再次开始工作，为块 33 、 22 、 11 和 00 ( B0,3B_0,3 、 B0,2B_0,2 、 B0,1B_0,1 、 B0,0B_0,0 ) 执行后向路径。
+请注意，从概念上讲，这与梯度累积 (gradient accumulation steps，GAS) 的意思相同。PyTorch 叫它chunks，而 DeepSpeed 叫它 GAS 。
+梯度累积（Gradient Accumulation） 的主要思想是在计算一个批次的梯度后不立刻更新模型参数，而是累积几个批次后再更新，这样便可以在不增加显存消耗的情况下模拟更大的批次。
+因为 块 (chunks），PP 引入了 micro-batches (MBS) 的概念。
+DP 将全局 batch size 拆分为小 batch size。
+如果 dp_degree=4\\textdp\\_degree = 4 ，则全局 batch_sizeall=1024\\textbatch\\_size_\\textall=1024 将拆分为 44 个小 batch size，每个小batch有 batch_sizedp=1024/4=256\\textbatch\\_size_\\textdp=1024/4 = 256 。
+如果 chunks=32\\textchunks = 32 ，最终得到的 micro batch_size=256/32=8\\textmicro batch\\_size = 256/32= 8 。
+每个管级一次处理一个 micro batch。
+计算 DP + PP 设置的全局批量大小的公式为: mbs∗chunks∗dp_degree (8∗32∗4=1024) \\textmbs*\\textchunks*\\textdp\\_degree (8*32*4=1024) 将 mini-batch 进一步划分成更小的 micro-batch，同时利用 pipipline 方案，每次处理一个 micro-batch 的数据，得到结果后，将该 micro-batch 的结果发送给下游设备，同时开始处理后一个 micro-batch 的数据，通过这套方案减小设备中的 Bubble(设备空闲的时间称为 Bubble)
+ZeRO ZeRO: Memory Optimizations Toward Training Trillion Parameter Models
+数据并行会产生大量冗余 Model States 的空间占用。每个 GPU 都需要存储大语言模型的相同副本，包括模型参数和优化器参数等。但是对于每个 GPU，在模型传播到某一层时，其他层的模型和优化器参数并不参与计算，这导致了严重的显存冗余现象。
+ZeRO 的本质，是在数据并行的基础上，对冗余空间占用进行深度优化。
+ZeRO 仅在每个 GPU 上保留部分模型参数和优化器参数，当需要时再从其它 GPU 中读取进行计算，使用完之后便可以释放相应显存。
+显存占用 大规模训练中的显存占用可以分为 Model States 与 Residual states 两部分：
+Model States
+Optimizer States
+Optimizer States 是 Optimizer 在进行梯度更新时所需要用到的数据，例如 SGD 中的 Momentum 以及使用混合精度训练时的 Float32 Master Parameters
+Gradient
+在反向传播后所产生的梯度信息，其决定了参数的更新方向。
+Model Parameter
+模型参数，也就是我们在整个过程中通过数据“学习”的信息
+在传统DDP下，每个进程都使用同样参数来进行训练。每个进程也会持有对 Optimizer States 的完整拷贝，同样占用了大量显存。
+在混合精度场景下，设模型参数量为 Φ \\mathbf\\Phi , 那么梯度的元素数量为 Φ\\mathbf\\Phi ，模型参数（fp16）、模型梯度（fp16） 和 优化器状态（fp32）总占用 显存：
+(2+2+K)Φ (2 +2+K)\\mathbf\\Phi Residual States
+除了模型状态之外的显存占用，包括 激活值（activation）、各种临时缓冲区（buffer）以及无法使用的显存碎片（fragmentation）。
+ZeRO-DP （Model States） ZeRO 有三个不同级别，分别对应对 Model States 不同程度的分割 (Paritition)，图中的 Pos\\textP_\\textos 、 Pos+g\\textP_\\textos+\\textg 、 Pos+g+p\\textP_\\textos+\\textg+\\textp 分别代表 ZeRO-1、ZeRO-2、ZeRO-3
+ZeRO-1 [ Pos\\textP_\\textos ]： 分割 Optimizer States
+模型参数（parameters）和梯度（gradients）仍旧是每张卡保持一份，此时，每张卡的模型状态所需显存是 2Φ+2Φ+K⋅ΦNd2\\mathbf\\Phi+2\\mathbf\\Phi+ \\fracK \\cdot \\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 4Φ4\\mathbf\\Phi 。
+ZeRO-2 [ Pos+g\\textP_\\textos+\\textg ]： 分割 Optimizer States 与 Gradients
+继续对模型梯度进行分片，模型参数仍旧是每张卡保持一份，此时，每张卡的模型状态所需显存是 2Φ+(2+K)⋅ΦNd2\\mathbf\\Phi+ \\frac(2+K) \\cdot \\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 2Φ2\\mathbf\\Phi 。
+ZeRO-3 [ Pos+g+p\\textP_\\textos+\\textg+\\textp ]： 分割 Optimizer States、Gradients 与 Parameters
+继续对模型参数进行分片，此时每张卡的模型状态所需显存是 (2+2+K)⋅ΦNd\\frac(2+2+K) \\cdot \\mathbf\\PhiN_d ，当 NN 比较大时，趋向于 00 。
+ZeRO-1 和 ZeRO-2 并不会带来额外的通讯，但 ZeRO-3 每一次要算 W\\mathbf W 的时候，都得去别的机器拿回来，相当于带来了额外的通讯(增加了 50%50\\% )
+ZeRO V.S. 模型并行 ZeRO 是模型并行的形式，数据并行的实质。
+模型并行，是指在 forward 和 backward 的过程中，只需要用自己维护的那块 W\\mathbf W 来计算。
+即 同样的输入 X，每块 GPU 上各算模型的一部分，最后通过某些方式聚合结果。
+ZeRO 做 forward 和 backward 的时候，需要把各 GPU 上维护的 W\\mathbf W 聚合起来。
+即 本质上还是用完整的 W 进行计算。它是不同的输入 X\\mathbf X ，完整的参数 W\\mathbf W ，最终再做聚合。
+ZeRO-R（Residual States） PαP_\\alpha : Partitioned Activation Checkpointing
+activation 起到加速梯度计算的作用。
+使用分片方法，并且配合 checkpointing，可以灵活设置 activation的存储。每块 GPU 上只维护部分的 activation，需要时再从别的地方聚合过来就行。需要注意的是，activation 对显存的占用一般会远高于模型本身，通讯量也是巨大的，所以这块要灵活、有效地实验设计。
+CBC_B : Constant Size Buffer 临时缓冲区
+模型训练过程中经常会创建一些大小不等的临时缓冲区，比如对梯度进行 AllReduce。
+解决办法为预先创建一个固定的缓冲区 ，训练过程中不再动态创建，如果要传输的数据较小，则多组数据 bucket 后再一次性传输，提高效率
+固定大小的内存 buffer，它的目的在于：
+提升带宽利用率。当 GPU 数量上升，GPU 间的通讯次数也上升，每次的通讯量可能下降（但总通讯量不会变）。数据切片小了，就不能很好利用带宽了。所以这个 buffer 起到了积攒数据的作用：等数据积攒到一定大小，再进行通讯。
+使得存储大小可控。在每次通讯前，积攒的存储大小是常量，是已知可控的。更方便使用者对训练中的存储消耗和通讯时间进行预估。
+MDM_D : Memory Defragmentation 显存碎片
+显存出现碎片的一大原因是 gradient checkpointing 后，不断地创建和销毁那些不保存的激活值。
+解决方法是预先分配一块连续的显存，将常驻显存的模型状态和 checkpointed activation 存在里面，剩余显存用于动态创建和销毁 discarded activation。
+设置机制，对碎片化的存储空间进行重新整合，整出连续的存储空间。防止出现总存储足够，但连续存储不够而引起的存储请求 fail。
+ZeRO-Offload forward 和 backward 计算量高，因此和它们相关的部分，例如参数 W\\mathbf W （fp16），activation，就全放入 GPU。
+update 的部分计算量低，因此和它相关的部分，全部放入 CPU 中。例如 参数 W\\mathbf W (fp32)，optimizer states（fp32）和 gradients(fp16)等。
+混合精度 Mixed Precision Training
+混合精度训练，指代的是单精度 float（ 3232 bit， 44 个字节）和半精度 float16（ 1212 bit， 22 个字节） 混合。
+半精度 半精度优点：
+内存占用更少： 通用的模型 fp16 占用的内存只需原来的一半：
+模型占用的内存更小，训练的时候可以用更大的 batchsize。 模型训练时，通信量（特别是多卡，或者多机多卡）大幅减少，大幅减少等待时间，加快数据的流通。 计算更快：
+目前的不少 GPU 都有针对 fp16 的计算进行优化。论文指出：在近期的 GPU 中，半精度的计算吞吐量可以是单精度的 22 - 88 倍； 半精度问题
+数据溢出 Overflow / Underflow：对于深度学习而言，最大的问题在于 Underflow（下溢出），在训练后期，例如激活函数的梯度会非常小， 甚至在梯度乘以学习率后，值会更加小。 舍入误差 Rounding Error。 混合精度训练（Mixed Precision 利用 fp16 进行乘法和存储，利用 fp32 来进行加法计算。这样可以减少加法过程中的舍入误差，保证精度不损失
+在模型矩阵乘法的过程中，利用 fp32 来进行矩阵乘法中间的累加(accumulated)。
+然后再将 fp32 的值转化为 fp16 进行存储。
+FP32 权重备份 主要用于解决舍入误差的问题。
+weights, activations, gradients 等数据在训练中都 利用 fp16 来存储
+fp32 额外拷贝一份 weight 会新增加训练时候存储的占用。
+实际训练过程中，内存中占据大部分的基本都是 activations 的值。特别是在 batchsize 很大的情况下， activations 更是特别占据空间。 保存 activiations 主要是为了在 back-propogation 的时候进行计算。
+因此，只要 activation 的值基本都是使用 fp16 来进行存储的话，则最终模型与 fp32 相比起来， 内存占用也基本能够减半。
+拷贝一份 fp32 的 weights，用于更新。
+在更新权重的时候， weightt=weightt−1+lr⋅gradients \\textweight_t= \\text weight_t-1+ \\textlr \\cdot \\textgradients ，而在深度模型中， lr⋅gradients \\textlr \\cdot \\textgradients 往往非常小，如果利用 fp16 来进行相加的话， 则很可能会出现 舍入误差 Rounding Error，导致更新无效。
+通过将 weights 拷贝成 fp32 格式，并且确保整个更新（update）过程在 fp32 格式下进行
+损失放大 Loss Scale 主要用于解决 fp16 underflow 的问题。
+训练到了后期，梯度（特别是激活函数平滑段的梯度）会特别小，fp16 表示容易产生 underflow 现象。
+Loss Scale
+对计算出来的 loss 值进行 scale，由于链式法则的存在，loss 上的 scale 也会作用在梯度上。这样比起对每个梯度进行 scale 更加划算。 scaled 过后的梯度，就会平移到 fp16 有效的展示范围内。
+反向传播前 ，将损失变化（dLoss）手动增大 2k2^k 倍，因此反向传播时得到的中间变量（激活函数梯度）则不会溢出； 反向传播后，将权重梯度缩 2k2^k 倍，恢复正常值。 这样，scaled-gradient 就可以一直使用 fp16 进行存储了。只有在进行更新的时候，才会将 scaled-gradient 转化为 fp32，同时将 scale 抹去。
+通讯 Broadcast Broadcast 把同一份数据分发广播给所有人。
+Scatter Scatter 将不同数据分发给不同的进程。
+Gather Gather 函数是反向的 Scatter ，即收集所有进程发送向 root 进程的数据。
+Reduce Reduce 将多个进程中的数据按照指定的映射函数进行运算，得到最后的结果存在一个进程中。
+在下图中，左边每个进程包含一个整数。 调用 MPI_Reduce 的 root 进程为 00 ，并使用 MPI_SUM 作 reduction 运算。 这 44 个数字相加后将结果存储在 root 进程中。
+右边的每个进程都有 22 个元素。 结果求和基于每个元素进行。 即将每个数组中的第 ii 个元素累加到进程 00 的结果数组中的第 ii 个元素中。
+All-reduce All-reduce 与 Reduce 的区别就在于后者最后的结果是只保存在一个进程中，而 All-reduce 需要每个进程都有同样的结果。
+所以 All-reduce 一般包含 Scatter 操作，所以有时候也会看到 reduce-scatter 这种说法，其实 reduce-scatter 可以看成是 all reduce 的一种实现方式。
+Ring-All-Reduce All-Reduce 可以有多种实现方法，目前主流的实现方法是基于 Ring 的方式。总的来说，Ring-AllReduce 可以分为 reduce-scatter 和 all-gather 两部分。
+这里假设有 33 张显卡，逻辑拓扑结构为一个环。此外，每块显卡中的数据都被切分为 33 块。每个显卡都会从红色的数据块开始，然后沿着箭头的方向进行传递和累积。这个逻辑在后续的 reduce-scatter 和 all-gather 中完全相同。
+在 nn 个显卡上将数据分成 nn 块，第 ii 个显卡以第 ii 块为起始，经过 n−1n-1 步完成 reduce-scatter 或者 all-gather。
+Reduce-scatter 各个显卡从红色的数据开始传输，经过 22 步 后，reduce 的结果存储在了绿色的位置。
+All-gather 经过 reduce-scatter 后，reduce 的数据分布在绿色的数据块上。all-gather 从绿色的数据块开始，经过 22 步 后，所有的显卡都有了完整的 reduce 结果。
+Ring-AllReduce 通讯量分析 假设模型参数 W 的大小为 Φ\\mathbf\\Phi ，GPU 个数为 NN 。则梯度大小也为 Φ\\mathbf\\Phi ，每个梯度块的大小为 ΦN\\frac\\mathbf\\PhiN ，对单卡 GPU 来说（只算其 send 通讯量）：
+Reduce-Scatter 阶段，通讯量为 (N−1)ΦN(N-1)\\frac\\mathbf\\PhiN All-Gather 阶段，通讯量为 (N−1)ΦN(N-1)\\frac\\mathbf\\PhiN 单卡总通讯量为 2(N−1)ΦN2(N-1)\\frac\\mathbf\\PhiN ，随着 NN 的增大，可以近似为 2Φ2\\mathbf\\Phi 。 全卡总通讯量为 2NΦ2N\\mathbf\\Phi ，通讯量均衡负载到了每一时刻的每个 Worker 上。
+Reference Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism
+GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism
+ZeRO: Memory Optimizations Toward Training Trillion Parameter Models
+Mixed Precision Training
+python-parallel-programmning-cookbook
+MPI Reduce and Allreduce`}).add({id:12,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
 具体来说，对于一个事件，它的 自信息 大小与其发生概率有关。它是衡量与概率空间中单个事件或离散随机变量取值相关的信息量的一种 量度。
 它用信息的单位表示，例如 bit、nat 或是 hart，使用哪个单位取决于在计算中使用的对数的底。
 自信息的期望值 就是信息论中的 熵，它反映了 随机变量采样时的平均不确定程度。
