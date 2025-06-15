@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>RecommenderSystem on EV's Blog</title><link>https://eveydyw.github.io/blogs/recommendersystem/</link><description>Recent content in RecommenderSystem on EV's Blog</description><generator>Hugo</generator><language>en</language><lastBuildDate>Sun, 15 Sep 2024 18:31:01 +0800</lastBuildDate><atom:link href="https://eveydyw.github.io/blogs/recommendersystem/index.xml" rel="self" type="application/rss+xml"/><item><title>RecommenderSystem-2-召回</title><link>https://eveydyw.github.io/blogs/recommendersystem/retrieval/</link><pubDate>Sun, 15 Sep 2024 18:31:01 +0800</pubDate><guid>https://eveydyw.github.io/blogs/recommendersystem/retrieval/</guid><description>&lt;h2 id="基于物品的协同过滤itemcf" class="heading">
+ 基于物品的协同过滤（&lt;code>ItemCF&lt;/code>）&lt;a href="#%e5%9f%ba%e4%ba%8e%e7%89%a9%e5%93%81%e7%9a%84%e5%8d%8f%e5%90%8c%e8%bf%87%e6%bb%a4itemcf" aria-labelledby="基于物品的协同过滤itemcf">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;p>&lt;strong>基于物品的协同过滤 (Item collaborative filtering)&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>【&lt;code>ItemCF &lt;/code>的原理】&lt;/strong>&lt;/p>
+&lt;p>从用户的行为中挖掘出物品之间的相似性，再利用物品之间的相似性做推荐。&lt;/p>
+&lt;p>&lt;strong>【&lt;code>ItemCF &lt;/code>的实现】&lt;/strong>&lt;/p>
+&lt;center>
+&lt;img style = " border-radius: 0.3125em; box-shadow: 0 0.2rem 0.4rem 0 rgba(34,36,38,.12); margin: 1rem;" 
+src = "pics/image-20250401220256859.png" 
+width = "50%" 
+alt = "">
+&lt;/center>
+&lt;p>量化用户对物品的兴趣，如点击、点赞、收藏、转发，这四种行为各算 
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ &lt;span class="mathjax-inline">
+ &lt;span class="katex">&lt;math xmlns="http://www.w3.org/1998/Math/MathML">&lt;semantics>&lt;mrow>&lt;mn>1&lt;/mn>&lt;/mrow>&lt;annotation encoding="application/x-tex">1&lt;/annotation>&lt;/semantics>&lt;/math>&lt;/span>
+ &lt;/span>
+ 
+ 
+
+ 分&lt;/p></description></item><item><title>RecommenderSystem-1-概要</title><link>https://eveydyw.github.io/blogs/recommendersystem/basics/</link><pubDate>Sat, 14 Sep 2024 18:51:07 +0800</pubDate><guid>https://eveydyw.github.io/blogs/recommendersystem/basics/</guid><description>&lt;h2 id="推荐系统的基本概念" class="heading">
+ 推荐系统的基本概念&lt;a href="#%e6%8e%a8%e8%8d%90%e7%b3%bb%e7%bb%9f%e7%9a%84%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5" aria-labelledby="推荐系统的基本概念">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;h3 id="转化流程" class="heading">
+ 转化流程&lt;a href="#%e8%bd%ac%e5%8c%96%e6%b5%81%e7%a8%8b" aria-labelledby="转化流程">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h3>&lt;center>
+&lt;img style = " border-radius: 0.3125em; box-shadow: 0 0.2rem 0.4rem 0 rgba(34,36,38,.12); margin: 1rem;" 
+src = "pics/image-20250401204900066.png" 
+width = "50%" 
+alt = "">
+&lt;/center>
+&lt;h3 id="消费指标" class="heading">
+ 消费指标&lt;a href="#%e6%b6%88%e8%b4%b9%e6%8c%87%e6%a0%87" aria-labelledby="消费指标">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h3>&lt;ul>
+&lt;li>
+&lt;p>&lt;strong>点击率&lt;/strong> = 点击次数/曝光次数&lt;/p></description></item></channel></rss>
