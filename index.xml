@@ -96,7 +96,15 @@
  
  
 
- 可以缓存起来。&lt;/p></description></item><item><title>RecommenderSystem-2-召回</title><link>https://eveydyw.github.io/blogs/recommendersystem/retrieval/</link><pubDate>Sun, 15 Sep 2024 18:31:01 +0800</pubDate><guid>https://eveydyw.github.io/blogs/recommendersystem/retrieval/</guid><description>&lt;h2 id="基于物品的协同过滤itemcf" class="heading">
+ 可以缓存起来。&lt;/p></description></item><item><title>RecommenderSystem-3-排序</title><link>https://eveydyw.github.io/blogs/recommendersystem/rank/</link><pubDate>Sun, 15 Sep 2024 21:48:10 +0800</pubDate><guid>https://eveydyw.github.io/blogs/recommendersystem/rank/</guid><description>&lt;h2 id="多目标排序模型" class="heading">
+ 多目标排序模型&lt;a href="#%e5%a4%9a%e7%9b%ae%e6%a0%87%e6%8e%92%e5%ba%8f%e6%a8%a1%e5%9e%8b" aria-labelledby="多目标排序模型">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
+&lt;/h2>&lt;center>
+&lt;img style = " border-radius: 0.3125em; box-shadow: 0 0.2rem 0.4rem 0 rgba(34,36,38,.12); margin: 0.5rem;" 
+src = "pics/image-20250727215517356.png" 
+width = "45%" 
+alt = "1">
+&lt;/center>
+&lt;p>​&lt;/p></description></item><item><title>RecommenderSystem-2-召回</title><link>https://eveydyw.github.io/blogs/recommendersystem/retrieval/</link><pubDate>Sun, 15 Sep 2024 18:31:01 +0800</pubDate><guid>https://eveydyw.github.io/blogs/recommendersystem/retrieval/</guid><description>&lt;h2 id="基于物品的协同过滤itemcf" class="heading">
  基于物品的协同过滤（&lt;code>ItemCF&lt;/code>）&lt;a href="#%e5%9f%ba%e4%ba%8e%e7%89%a9%e5%93%81%e7%9a%84%e5%8d%8f%e5%90%8c%e8%bf%87%e6%bb%a4itemcf" aria-labelledby="基于物品的协同过滤itemcf">&lt;svg class="svg-inline--fa fas fa-link anchor" fill="currentColor" aria-hidden="true" role="img" viewBox="0 0 640 512">&lt;use href="#fas-link">&lt;/use>&lt;/svg>&lt;/a>
 &lt;/h2>&lt;p>&lt;strong>基于物品的协同过滤 (Item collaborative filtering)&lt;/strong>&lt;/p>
 &lt;p>&lt;strong>【&lt;code>ItemCF &lt;/code>的原理】&lt;/strong>&lt;/p>

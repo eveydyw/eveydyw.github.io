@@ -1356,7 +1356,209 @@ Bloom Filter 的缺点 Bloom Filter 把物品的集合表示成一个二进制�
 每往集合中添加一个物品，只需要把向量 kk 个位置的元素置为 11 。（如果原本就是 11 ，则不变。)
 Bloom filter 只支持添加物品，不支持删除物品。从集合中移除物品，无法消除它对向量的影响。
 每天都需要从物品集合中移除年龄大于 11 个月的物品（超龄物品不可能被召回，没必要把它们记录在 Bloom filter，降低 nn 可以降低误伤率。）
-Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:8,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:8,tag:"en",href:"/blogs/recommendersystem/rank/",title:"RecommenderSystem-3-排序",description:"【笔记】wangshusen-推荐系统：排序",content:`多目标排序模型 ​
+用户一笔记的交互
+对于每篇笔记，系统记录：
+曝光次数(number of impressions) 点击次数（number of clicks） 点赞次数(number of likes) 收藏次数（number of collects） 转发次数((number of shares) 点击率 = 点击次数 ／ 曝光次数 点赞率 = 点赞次数 ／ 点击次数 收藏率 = 收藏次数 ／ 点击次数 转发率 = 转发次数 ／ 点击次数 排序的依据
+排序模型预估点击率、点赞率、收藏率、转发率等多种分数。 融合这些预估分数。（比如加权和，权重为 A/B 测试调试出来）。 根据融合的分数做排序、截断。 多目标模型 ​ 排序模型的输入是各种各样的特征：
+用户特征：用户 id，用户画像。
+物品特征：物品 id，物品画像，作者信息。
+统计特征：用户统计特征和物品统计特征：
+用户在过去 30 天中一共曝光了多少篇笔记，点击了多少篇笔记，点赞了多少篇笔记。 候选物品在过去 30 天中一共获得多少次曝光机会，获得了多少次点击、点赞。 场景特征：随着用户请求传过来，包含当前的时间，用户所在地点。
+候选物品跟用户如果在同一个城市，那么用户对物品可能会有更高的兴趣。 当前是否是周末节假日，也会影响用户的兴趣。 把这些特征做 Concatenation 输入神经网络，神经网络可以是全连接网络、Wide &amp; Deep 等更复杂的结构。
+神经网络会输出一个向量，这个向量再输入 44 个神经网络，每个神经网络有 2∼32 \\sim 3 个全联接层，最后一个激活函数是 Sigmoid。
+四个神经网络分别输出 点击率、点赞率、收藏率、转发率 的预估值，四个预估指都 0∼10 \\sim 1 的实数。
+推荐系统的排序主要靠这 44 个预估值，它们反映出用户对物品的兴趣。
+模型训练 ​
+模型输出的点击率、点赞率、收藏率、转发率分别记作 p1p_1 ， p2p_2 ， p3p_3 ， p4p_4 ，它们都是模型做出的预估。做训练时，让这些预估值去拟合真实的目标。
+真实的目标记作 y1y_1 ， y2y_2 ， y3y_3 ， y4y_4 ，分别对应点击、点赞、收藏、转发的行为， yi∈0,1y_i \\in \\0,1\\ 。
+y1=1y_1 = 1 ， y2=0y_2 = 0 ， y3=0y_3=0 ， y4=1y_4=1 ，表示用户对物品有点击，没点赞，没收藏，有转发，这些是用户真实的行为。
+训练鼓励模型的预测接近目标，即做二元分类，对点击点赞收藏转发等的 44 个任务，每个任务都是一个二元分类，分别使用 交叉熵损失函数。
+CrossEntropy(yi,pi)=−(yi⋅ln⁡pi+(1−yi)⋅ln⁡(1−pi)) \\textCrossEntropy(y_i, p_i)=-\\big(y_i\\cdot\\ln p_i+(1-y_i)\\cdot\\ln(1-p_i)\\big) 总的损失函数:
+∑i=14αi⋅CrossEntropy(yi,pi) \\sum_i = 1^4\\alpha_i\\cdot\\textCrossEntropy(y_i, p_i) αi\\alpha_i ：根据经验设置。 对损失函数求梯度，做梯度下降更新参数。
+【困难】
+类别不平衡：
+每 100 次曝光，约有 10 次点击，90 次无点击 。 每 100 次点击，约有 10 次收藏，90 次无收藏 。 【解决方案】
+负样本降采样（down-sampling）：
+保留一小部分负样本。 让正负样本数量平衡，节约计算 预估值校准 Practical Lessons from Predicting Clicks on Ads at Facebook
+正样本、负样本数量为 n+n_+ 和 n−n_- 。
+对负样本做降采样，抛弃一部分负样本。使用 α⋅n−\\alpha \\cdot n_- 个负样本， α∈(0,1)\\alpha \\in (0,1) 是采样率。
+由于负样本变少，预估点击率大于真实点击率。
+真实点击率（期望）：
+ptrue=n+n++n− p_\\mathrmtrue=\\fracn_+n_++n_- 预估点击率（期望）：
+ppred=n+n++α⋅n− p_\\mathrmpred=\\fracn_+n_++\\alpha\\cdot n_- 校准公式：
+ptrue=α⋅ppred(1−ppred)+α⋅ppred p_\\mathrmtrue=\\frac\\alpha\\cdot p_\\mathrmpred(1-p_\\mathrmpred)+\\alpha\\cdot p_\\mathrmpred Multi-gate Mixture-of-Experts(MMoE) MMoE 模型结构 Modeling Task Relationships in Multi-task Learning with Multi-gate Mixture-of-Experts
+对神经网络输出的向量 xi\\\\mathbfx_i\\ 做加权平均，然后用加权平均得到的向量去预估某个业务指标。
+下例中需要预估 22 个指标，用了 33 个专家。神经网络专家神经网络的数量是个超参数，需要手动调。（通常 44 或 88 ）
+​
+​
+模型的输入是一个向量，包含用户特征、物品特征、统计特征、场景特征。
+把向量输入 33 个神经网络（实践中通常为 4∼84 \\sim 8 ），这 33 个神经网络结构相同，由很多全连接层组成，但这 33 个神经网络不共享参数，这三个神经网络即为 专家（Experts）。
+33 个神经网络各输出一个向量： x1\\mathbfx_1 , x2\\mathbfx_2 , x3\\mathbfx_3 。
+把 用户特征、物品特征、统计特征、场景特征 拼接的特征向量输入另一个神经网络，这个神经网络也有多个全连接层。
+在神经网络的最后加一个 Softmax 激活函数，输出一个三维的向量： [p1,p2,p3][p_1, p_2, p_3] 。
+pip_i 满足 pi∈[0,1]p_i \\in [0,1] 且 ∑i=13pi=1\\sum_i=1^3 p_i= 1 。
+分别对应 33 个专家神经网络之后，用这三个元素作为权重对向量 x1\\mathbfx_1 , x2\\mathbfx_2 , x3\\mathbfx_3 做加权平均。
+同理把 用户特征、物品特征、统计特征、场景特征 拼接的特征向量送入右边的神经网络，在神经网络的最后也是 Softmax 激活函数输出一个三维向量： [q1,q2,q3][q_1, q_2, q_3] 。
+qiq_i 满足 qi∈[0,1]q_i \\in [0,1] 且 ∑i=13qi=1\\sum_i=1^3 q_i= 1 。
+这 33 个元素也是之后做加权平均值的权重。
+​
+​
+用权重 p1p_1 , p2p_2 , p3p_3 对向量 x1\\mathbfx_1 , x2\\mathbfx_2 , x3\\mathbfx_3 做加权平均，得到左边向量 p1x1+p2x2+p3x3p_1 \\mathbfx_1 + p_2\\mathbfx_2 + p_3\\mathbfx_3 。
+用权重 q1q_1 , q2q_2 , q3q_3 对向量 x1\\mathbfx_1 , x2\\mathbfx_2 , x3\\mathbfx_3 做加权平均，得到右边向量 q1x1+q2x2+q3x3q_1 \\mathbfx_1 + q_2\\mathbfx_2 + q_3\\mathbfx_3 。
+把左边向量输入一个神经网络，神经网络可以有一个或者多个全连接层，神经网络输出一个指标的预估。取决于具体的任务，比如神经网络输出对点击率的预估是一个介于 0∼10\\sim 1 之间的实数。
+把右边的向量输入另一个神经网络，这个神经网络会输出 另一个指标的预估。比如对点赞略的预估也是介于 0~1 之间的实数
+图中假设多目标模型只有点击率和点赞率这两个目标，所以用了 p\\mathbfp 和 q\\mathbfq 这两组权重。假如有 1010 个目标，那么就要用 1010 组权重。
+极化现象 Recommending what video to watch next: a multitask ranking system
+​
+​
+上例中有 22 个 Softmax 函数，各自输出一个 33 维向量，每个向量都是概率分布元素，大于 00 相加等于 11 。
+极化：Softmax 输出的向量中一个值接近 11 ，其余值接近 00 。
+左边的 Softmax 输出值约等于 0,0,10, 0, 1 ，即左边的预估点击率任务只使用了第 33 号专家神经网络，而没有使用其他两个专家神经网络。
+这样就等于没有用 mixture of experts，没有让三个专家神经网络的输出融合，而是简单使用了一个专家
+右边 Softmax 的输出值接近 0,1,00, 1, 0 ，即右边的任务只使用了第 22 号专家神经网络，也没有对三个专家做融合。
+两个任务分别使用了第 22 号和第 33 号专家神经网络，第 11 号专家神经网络不会被用到。
+那么 MMoE 就相当于一个简单的多目标模型，不会对专家做融合，失去了MMoE的优势。
+解决办法 如果有 nn 个 “专家”，那么每个 softmax 的输入和输出都是 nn 维向量。
+训练时，对 Softmax 的输出使用 dropout。
+Softmax 输出的 nn 个数值被 mask 的概率都是 10%10\\% 。 每个“专家”被随机丢弃的概率都是 10%10\\% 。 dropout 会强迫每个任务根据部分专家做预测：
+如果用 dropout 不太可能会发生极化，否则预测的结果会特别差。 假如发生极化，Softmax 输出的某个元素接近 11 ，万一这个元素被 mask，预测的结果肯定会错得离谱。 为了让预测尽量精准，神经网络会尽量避免极化的发生，避免 Softmax 输出的某个元素接近 11 。 预估分数的融合 简单的加权和
+pclick⏟点击率+w1⋅plike⏟点赞率+w2⋅pcollect⏟收藏率+⋯ \\underbracep_\\textclick_\\text点击率+w_1\\cdot \\underbracep_\\textlike_\\text点赞率+w_2\\cdot \\underbracep_\\textcollect_\\text收藏率+\\cdots 点击率乘以其他项的加权和
+pclick⋅(1+w1⋅plike+w2⋅pcollect+⋯ ) p_\\mathrmclick\\cdot(1+w_1\\cdot p_\\mathrmlike+w_2\\cdot p_\\mathrmcollect+\\cdots) pclick=点击曝光p_\\mathrmclick = \\frac\\text点击\\text曝光 plike=点赞点击p_\\mathrmlike = \\frac\\text点赞\\text点击 pclick⋅plike=点赞曝光p_\\mathrmclick\\cdot p_\\mathrmlike = \\frac\\text点赞\\text曝光 海外某短视频APP的融分公式
+(1+w1⋅ptime)α1⋅(1+w2⋅plike)α2⋯ (1+w_1\\cdot p_\\mathrmtime)^\\alpha_1\\cdot(1+w_2\\cdot p_\\mathrmlike)^\\alpha_2\\cdots ptimep_\\texttime ：预估短视频的观看时长（比如预测用户会观看 1010 秒）。
+wiw_i 和 αi\\alpha_i : 超参，通过线上A/B test 确定。
+(1+w2⋅plike)α2(1+w_2\\cdot p_\\mathrmlike)^\\alpha_2 ：对点赞率的函数变换。
+取多个预估指标的函数变换取连乘作为最终的融合分数。
+国内某短视频APP的融分公式
+w1rtimeα1+β1+w2rclickα2+β2+w3rlikeα3+β3+⋯ \\fracw_1r_\\mathrmtime^\\alpha_1+\\beta_1 + \\fracw_2r_\\mathrmclick^\\alpha_2+\\beta_2 + \\fracw_3r_\\mathrmlike^\\alpha_3+\\beta_3 + \\cdots 多目标标排序模型给 nn 个候选视频打分得到预估的播放时长、点击率、点赞率、转发率等指标。
+根据预估时长 ptimep_\\texttime 对 nn 篇候选视频做排序。
+如果某视频排名第 rtimer_\\texttime ，则它得分为 1rtimeα+β\\frac1r_\\mathrmtime^\\alpha+\\beta ，播放时长越长，排名越靠前， rtimer_\\texttime 越小，得分越高。
+αi\\alpha_i 和 βi\\beta_i : 超参。
+对点击、点赞、转发、评论等预估分数做类似处理。
+某电商的融分公式
+pclickα1×pcartα2×ppayα3×priceα4 p_\\mathrmclick^\\alpha_1\\times p_\\mathrmcart^\\alpha_2\\times p_\\mathrmpay^\\alpha_3\\times \\mathrmprice^\\alpha_4 电商的转化流程：曝光 -&gt; 点击 -&gt; 加购物车 -&gt; 付款。
+模型预估要预估中间每一步的转化率： pclickp_\\textclick 、 pcartp_\\textcart 、 ppayp_\\textpay 。
+当 α1=α2=α3=α4=1\\alpha_1 = \\alpha_2 = \\alpha_3 = \\alpha_4 = 1 时，乘积为电商营收。
+视频播放建模 图文 v.s. 视频 图文笔记排序的主要依据：点击、点赞、收藏、转发、评论·····
+视频排序的依据还有播放时长和完播。
+直接用回归拟合播放时长效果不好。
+视频播放时长 Deep Neural Networks for YouTube Recommendations
+​
+​
+把用户特征、视频特征、场景特征、统计特征等排序模型需要的特征输入多层神经网络。
+这个神经网络叫做 shared bottom，被所有任务共享。
+在这个神经网络之上有很多个全连接层，每个全连接层对应一个目标（点击、点赞、收藏、播放时长）。
+考虑对播放时长的预估，假设最右边的输出对应播放时长：
+全连接层输出的实数记作 zz 。
+对 zz 做 Sigmod 变换得到 pp ， p=sigmoid(z)=exp⁡(z)1+exp⁡(z)p=\\textsigmoid(z) = \\frac\\exp(z)1+\\exp(z) 。
+定义 y=t1+ty=\\frac t1+t ， tt 表示用户实际观看视频的时长， tt 越大则 yy 也越大。
+让 pp 拟合 yy ：使用 yy 和 pp 的交叉熵作为损失函数：
+CE(y,p)=y⋅log⁡p+(1−y)⋅log⁡(1−p)=−(t1+t⋅log⁡p+11+t⋅log⁡(1−p)) \\beginalign \\mathrmCE(y,p) &amp;=y\\cdot\\log p+(1-y)\\cdot\\log(1-p)\\\\[7pt] &amp;= -\\left(\\frac t1+t\\cdot\\log p+\\frac11+t\\cdot\\log(1-p)\\right) \\endalign 如果 p=yp=y ，那么 exp⁡(z)=t\\exp(z)=t 。因此可以用 exp⁡(z)\\exp(z) 作为播放时长的预估。
+训练中使用 pp 用 yy 与 pp 的交叉熵作为损失函数训练模型。
+线上做推理的时候，用 exp⁡(z)\\exp(z) ，把它作为对播放时长的预估。
+视频完播 回归方法 【例】：视频长度 1010 分钟，实际播放 44 分钟，则实际播放率为 y=0.4y=0.4 。
+让预估播放率 pp 拟合 yy :
+loss=y⋅log⁡p+(1−y)⋅log⁡(1−p) \\mathrmloss = y\\cdot \\log p + (1 -y) \\cdot \\log(1 -p) 线上预估完播率，模型输出 p=0.73p=0.73 ，意思是预计播放 73%73\\% 。
+预估的完播率类似点赞率、收藏率等，反映出用户对物品的兴趣。
+预估的完播率会作为融分公式中的一项影响视频的排序。
+二元分类方法 定义完播指标，比如完播 80%80\\% 。
+【例】：视频长度 1010 分钟，播放 &gt;8&gt;8 分钟作为正样本，播放 &lt;8&lt; 8 分钟作为负样本。
+做二元分类训练模型：播放 &gt;80%&gt;80\\% v.s. 播放 &lt;80%&lt;80\\% 线上预估完播率，模型输出 p=0.73p=0.73 ，意为：
+P(播放&gt;80%) = 0.73 \\mathbbP(\\text播放&gt;80\\%)~=~0.73 不能直接把预估的完播率用到融分公式
+​
+​
+从直觉上说，视频越长，完播率就越低。
+一个 1515 秒的短视频完播率会很高，但是 1515 分钟的长视频完播率就会比较低了。如果直接用预估的完播率，那么会有利于短视频而对长视频不公平。
+图中的曲线趋势显示，视频越长，完播率就越低。
+用函数 f f 拟合蓝色的曲线，函数 ff 的自变量是视频长度。用函数 ff 对预估的完播率做调整，这样可以公平对待长短视频的完播率。
+线上预估完播率，然后做调整： pfinish=预估完播率f(视频长度) p_\\mathrmfinish=\\frac\\text预估完播率f(\\text视频长度) 把 pfinishp_\\mathrmfinish 作为融分公式中的一项。 排序模型的特征 特征 用户画像(User Profile) 用户ID：用户id本身不携带任何有用的信息，但是模型学到的id embedding向量对召回、排序模型有很重要的影响，通常用 3232 位或者 6464 位向量)。
+人口统计学属性：性别、年龄。
+账号信息：新老、活跃度……（模型需要专门针对新用户、低活用户做优化）。
+感兴趣的类目、关键词、品牌 （用户自己填写/算法自动提取）。
+物品画像(Item Profile) 物品ID（在召回、排序中做embedding)。
+发布时间(或者年龄)
+小红书一篇笔记发表的时间越久，价值就越低。 强时效性话题发表的时间越久，价值就越低。 GeoHash（经纬度编码）、所在城市。
+标题、类目、关键词、品牌：
+通常对这些离散的内容特征做 embedding。 字数、图片数、视频清晰度、标签数……：
+反映出笔记的质量，笔记的点击和交互指标跟这些属性相关。 内容信息量、图片美学：
+算法打的分数，事先用人工标注的数据训练 cv 和 nlp 模型。 当新笔记发布的时候用模型给笔记打分，把内容信息量、图片美学这些分数写到物品画像中。 这些分数可以作为排序模型的特征。 用户统计特征 用户最近30天（7天、1天、1小时）的曝光数、点击数、点赞数、收藏数……
+用各种时间粒度可以反映出用户的实时兴趣、短期兴趣、中长期兴趣。 按照笔记图文/视频分桶。（比如最近7天，该用户对图文笔记的点击率、对视频笔记的点击率。）
+对图文和视频分别做统计，可以反映出用户对两类笔记的偏好。 按照笔记类目分桶。（比如最近30天，用户对美妆笔记的点击率、对美食笔记的点击率、对科技数码笔记的点击率。）
+反映出用户对哪些类目更感兴趣。 笔记统计特征 笔记最近30天（7天、1天、1小时）的曝光数、点击数、点赞数、收藏数……
+这些统计量反映出笔记的受欢迎程度。如果点击率、点赞率等指标都很高，说明笔记质量高，算法应该给这样的笔记更多的流量。 使用不同的时间粒度：有些笔记的时效性强，30天指标很高，但是最近一天的指标很差，说明这样的笔记已经过时了，不应该给更多流量。 按照用户性别分桶、按照用户年龄分桶……
+比如一篇笔记是对粉色键盘的测评，笔记的总体点击点赞指标都很高，但是来自男性用户的点击率很低。
+这说明不应该把这款粉色键盘推荐给男性用户。
+作者特征：
+发布笔记数 粉丝数 消费指标(曝光数、点击数、点赞数、收藏数) 场景特征(Context) 随着推荐请求传来，不用从用户画像、笔记画像的数据库中获取。
+用户定位 GeoHash（经纬度编码）、城市。
+当前时刻（分段，做embedding）。
+是否是周末、是否是节假日。
+手机品牌、手机型号、操作系统。
+特征处理 离散特征：做embedding。
+用户ID、笔记ID、作者ID。 类目、关键词丶城市、手机品牌 连续特征：做分桶，变成离散特征。
+年龄、笔记字数、视频长度 连续特征：其他变换。
+曝光数、点击数、点赞数等（长尾分布）数值做 log⁡(1+x)\\log(1+x) 大多数笔记只有几百次曝光，而极少数的笔记能有上百万次曝光，如果直接把曝光数作为特征输入模型，训练的时候梯度会很离谱，做推理的时候预估值会很奇怪。 转化为点击率、点赞率等值，并做平滑。 实际的推荐系统中，两种变换之后的连续特征都作为模型的输入。
+比如 log⁡(1+曝光数)\\log(1+\\text曝光数) 、 log⁡(1+点击数)\\log(1+\\text点击数) 会被用到，平滑之后的点击率、点赞率也会被用到。
+特征覆盖率 很多特征无法覆盖100%样本。
+例：很多用户不填年龄，因此用户年龄特征的覆盖率远小于100%。 例：很多用户设置隐私权限，APP不能获得用户地理定位，因此场景特征有缺失。 提高特征覆盖率，可以让精排模型更准。
+做特征工程的时候，还要考虑当特征缺失的时候，要用什么作为默认值。
+数据服务 用户画像(User Profile)。
+物品画像(Item Profile)。
+统计数据。
+三个数据源都存储在内存数据库中，在线上服务的时候，排序服务器会从三个数据源取回所需的数据，然后把读取的数据做处理作为特征传给模型，模型就能预估出点击率、点赞率等指标。
+​
+​
+当用户刷小红书的时候，用户请求会被发送到推荐系统的主服务器上，主服务器会把请求发送到召回服务器上。
+做完召回之后，召回服务器会把几十度召回的结果做归并，把几千篇笔记的id返回给主服务器。召回需要调用用户画像。
+主服务器把笔记id、用户id、场景特征发送给排序服务器，包括一个用户id和几千个笔记id，笔记id是召回的结果。
+用户id和场景特征都是从用户请求中获取的。场景特征包括当前的时刻、用户所在的地点以及手机的型号和操作系统。
+接下来排序服务器要从多个数据源中取回排序所需的特征，主要是三个数据源：用户画像、物品画像还有统计数据。取回的特征分别是用户特征、物品特征、统计特征。
+用户画像数据库线上压力比较小，因为每次只读一个用户的特征。
+物品画像数据库压力非常大，粗排要给几千篇笔记做排序，读取几千篇笔记的特征。
+存用户统计值的数据库压力小，存物品统计值的数据库压力很大。
+在工程实现的时候，用户画像里面存什么都可以，特征可以很多很大。但尽量不要往物品画像里塞很大的向量，否则物品画像会承受过大的压力。
+用户画像较为静态，像性别年龄这样的属性几乎不会发生变化，用户活跃度、兴趣标签这些属性通常也就是天级别的刷新，变化很慢。
+物品画像的变化更少，可以认为是完全静态的。物品自身的属性还有算法给物品打的标签，在很长一段时间内不会发生任何变化。
+对于用户画像和物品画像最重要的是读取速度快，而不太需要考虑时效性，因为他们都是静态的。有时候甚至可以把用户画像和物品画像缓存在排序服务器本地，让读取变得更快。
+不能把统计数据在本地缓存，统计数据是动态变化的，时效性很强。比如用户刷新小红书往下刷了30篇笔记，点击了5篇，点赞了1篇，那么这个用户的曝光点击点赞的统计量都发生了变化，要尽快刷新数据库。
+在收集到排序所需的特征之后，排序服务器把特征打包传递给 TF Serving。Tensorflow会给笔记打分。
+把分数返回给排序服务器，排序服务器会用融合的分数、多样性分数、还有业务规则给笔记做排序，把排名最高的几十篇笔记返回给主服务器。
+这些就是最终给用户曝光的笔记。
+粗排 回顾 粗排 vS 精排 粗排：
+给几千篇笔记打分。 单次推理代价必须小。 预估的准确性不高。 精排：
+给几百篇笔记打分。 单次推理代价很大。 预估的准确性更高。 精排模型 ​
+最下面是精排模型用到的特征：用户特征、物品特征、统计特征、场景特征。 直接对这些特征做concatenation，然后输入一个神经网络，这个神经网络叫做 shared bottom，意思是它被多个任务共享。 把shared bottom输出的向量输入上面多个头，得到对点击率、点赞率等指标的预估。 精排模型的代价主要是在shared bottom，因为它很大，神经网络结构也很复杂。精排模型属于前期融合。 前期融合：先对所有特征做concatenation，再输入神经网络。 线上推理代价大：如果有 nn 篇候选笔记，整个大模型要做 nn 次推理。 双塔模型(召回) ​
+左边是用户塔，右边是物品塔。两个塔各输出一个向量，两个向量的余弦相似度表示用户是否对物品感兴趣。 在训练好模型之后，把物品向量 b\\mathbfb 存储在向量数据库。在线上不需要用物品塔做计算，线上推理只需要用到用户塔。 每做一次推荐用户塔只做一次推理，计算出一个向量 a\\mathbfa 。 双塔模型的计算代价很小，适合做召回。双塔模型是典型的后期融合。 后期融合：把用户、物品特征分别输入不同的神经网络；不对用户、物品特征做融合。 线上计算量小： 用户塔只需要做一次线上推理，计算用户表征 a\\mathbfa 。 物品表征 b\\mathbfb 事先储存在向量数据库中，物品塔在线上不做推理。 预估准确性不如精排模型。 粗排的三塔模型 COLD: Towards the Next Generation of Pre-Ranking System
+​
+粗排是三塔模型，效果介于双塔和精排之间。
+输入：
+用户塔的输入是用户特征和场景特征。
+物品塔的输入只有物品特征。
+交叉塔的输入包括统计特征和交叉特征，交叉特征是指用户特征与物品特征做交叉。
+33 个塔分别输出 33 个向量，对 33 个向量做 concatenation 和交叉得到 11 个向量。
+把这个向量送入多个头，他们输出点击率、点赞率等指标的预估。
+训练粗排模型的方法为正常的端到端训练跟精排完全一样。
+【区别】
+最主要的区别是下面的 33 个塔。这个模型介于前期融合与后期融合之间。 前期融合指把底层特征做 concatenation，这里是把 33 个塔输出的向量做 concatenation 。 底层模型 ​
+用户塔可以很大很复杂：
+线上每次给一个用户做推荐，用户塔只需要做一次推理，即使用户塔很大推理很慢也没有关系。用户塔对粗排总的计算量影响很小。
+物品塔每给用户做一次推荐，粗排需要给 nn 个物品打分， nn 的大小是几千。理论上来说，物品塔需要做 nn 次推理。但好在物品的属性相对比较稳定，短期之内不会发生变化。
+可以把物品塔输出向量缓存在 parameter server，每隔一段时间刷新一次。
+由于做了缓存，物品塔在线上几乎不用做推理，只有遇到新物品的时候物品塔才需要做推理。粗排给几千物品打分，物品塔实际上只需要做几十次推理，计算量还好。
+所以物品塔的规模可以比较大。
+交叉塔输入是用户和物品的统计特征，还有用户和物品特征的交叉。
+统计特征会实时动态变化，每当一个用户发生点击等行为，它的统计特征就会发生变化。每当一个物品获得曝光和交互，它的点击次数、点击率等指标就会发生变化。
+由于交叉塔的输入会实时发生变化，因此不应该缓存交叉塔输出的向量，交叉塔在线上的推理避免不掉。
+粗排给 nn 个物品打分，有 nn 个物品的统计特征和交叉特征，交叉塔要实实在在做 nn 次推理，所以交叉塔必须足够小，计算够快。
+通常来说交叉塔只有 11 层，宽度也比较小。
+粗排模型底层 33 个塔， 33 个塔各输出 11 个向量， 33 个向量融合起来作为上层多个头的输入。
+上层结构 粗排给 nn 个物品打分，模型上层需要做 nn 次推理，无法用缓存等方式避免计算粗排。 推理的大部分计算量在模型上层。 模型上层做 nn 次推理代价大于交叉它的 nn 次推理。 三塔模型的推理 从多个数据源取特征：
+11 个用户的画像、统计特征。 nn 个物品的画像、统计特征。 用户塔：只做 11 次推理。
+物品塔：先缓存在parameter server上，未命中缓存时需要做推理。
+最坏的情况下，物品塔需要做 nn 次推理。 实际上缓存的命中率非常高，99%的物品都会命中缓存，做推理给几千个候选物品，做粗排时物品塔只需要做几十次推理。 交叉塔：输入都是动态特征，必须做 nn 次推理。
+上层网络做 nn 次推理，给 nn 个物品打分。
+粗排模型的设计理念就是尽量减少推理的计算量，使得模型可以在线上给几千篇笔记打分。
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:9,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
 绝对位置编码：位置索引 直接进行编码。一般都是直接构建 词嵌入向量 和 位置嵌入向量 直接相加。
 Transformer 中的 Sinusoidal 位置编码
 BERT 和 GPT 中的 训练式位置编码
@@ -1498,7 +1700,7 @@ fb(m)=∑i=0d/2−1cos⁡mb−2i/d≈∫01cos⁡mb−sds=令t=mb−s∫mb−1mco
 fb(m)≈Ci(m)−Ci(mb−1)ln⁡b \\beginequationf_b(m) \\approx \\frac\\textCi(m) - \\textCi(mb^-1)\\ln b\\endequation Ci(x)\\textCi(x) 的第一个零点 x0=0.6165⋯x_0=0.6165\\cdots 对于 m≥1m \\ge 1 ， ∣Ci(m)∣≤1/2|\\textCi(m)|\\leq 1/2 ，可以忽略
 考虑 Ci(mb−1)≤0m∈0,1,2,⋯ ,L−1\\textCi(mb^-1)\\leq 0 \\quad m\\in\\0,1,2,\\cdots,L-1\\ ，因此需要 mb−1∈[0,x0]⟹b≥mx0mb^-1 \\in [0,x_0] \\Longrightarrow b\\ge \\fracmx_0 ，即
 b≥Lx0≈2L b\\ge \\fracLx_0 \\approx 2L 这个结果比精确的数值结果要小，因为它对应于 d→∞d \\rightarrow \\infin ，无限个三角函数叠加会使得函数图像的震荡更少，看起来更加平稳（相比于有限的 dd ），从而对于固定的 bb ， fb(m)f_b(m) 的连续非负区间更长，或者反过来，对于固定的 LL ，保持 m=0,1,2,⋯ ,L−1m=0,1,2,\\cdots,L-1 的 fb(m)f_b(m) 都非负的 bb 更小。
-Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:9,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
+Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:10,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
 查询建议（SUG）：用户点击搜索之前，搜索引擎会给出的相关词，如用户输入“深度学习”，SUG 可能为“深度学习框架”、“深度学习教程”等等。
 作用是让搜索引擎用起来更方便。
 文档：搜索结果，如网页链接（Google、百度）、商品（Amazon、淘宝）、视频（YouTube、B 站）
@@ -1849,7 +2051,7 @@ value：文档列表，每个查询词都对应很多篇文档，由于离线做
 【思考题】
 【问题】：搜索引擎的时效性很差，该从哪些方面改进？
 【提示】：查询词处理、召回、排序分别能做什么？
-Reference https://github.com/wangshusen/SearchEngine`}).add({id:10,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:11,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
 制定标注规则→标注数据 → 训练模型→线上推理 \\text制定标注规则 \\rightarrow \\text标注数据  \\rightarrow \\text 训练模型 \\rightarrow \\text线上推理  搜索产品和搜索算法团队定义相关性标注规则。
 人为将 (q,d)(q,d) 的相关性划分为 44 个或 55 个（如百度）档位。后以 44 个为例。
 相关性分档规则非常重要，假如日后有大幅变动，需要重新标注数据，丢弃积累的数据。
@@ -2238,7 +2440,7 @@ Student 小模型要先预热、再蒸馏。
 后预训练（post pretrain）：用一个 GBDT 小模型自动生成数据，将用户行为 x\\mathrmx 映射到相关性标签 y^\\haty 。用自动生成的数据训练 BERT 大模型和小模型，结合回归任务排序任务以及预训练任务。
 微调（fine tuning）：使用人工标注的数据，数据量相对较小，一般几十万（最多几百万）条样本，监督学习，同时用回归和排序任务。
 蒸馏（distillation）：先训练大模型，用训练好的大模型给几亿条 (q,d)(q, d) 打分，得到蒸馏数据；基于预热好的小模型，用蒸馏数据做监督学习；最终得到的小模型部署到线上做相关性。
-Reference https://github.com/wangshusen/SearchEngine`}).add({id:11,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:12,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
 Encoder（左边）：负责理解输入文本，为每个输入构造对应的语义表示（语义特征）； Decoder（右边）：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。 这两个模块可以根据任务的需求而单独使用：
 纯 Encoder 模型：适用于只需要理解输入语义的任务，例如句子分类、命名实体识别； 纯 Decoder 模型：适用于生成式任务，例如文本生成； Encoder-Decoder 模型 或 Seq2Seq 模型： 适用于需要基于输入的生成式任务，例如翻译、摘要。 Transformer 家族 Encoder 分支 纯 Encoder 模型只使用 Transformer 模型中的 Encoder 模块，也被称为自编码 (auto-encoding) 模型。在每个阶段，注意力层都可以访问到原始输入句子中的所有词语，即具有 “双向 (Bi-directional)”注意力。
 纯 Encoder 模型通常通过破坏给定的句子（例如随机遮盖其中的词语），然后让模型进行重构来进行预训练，最适合处理那些需要理解整个句子语义的任务，例如句子分类、命名实体识别（词语分类）、抽取式问答。
@@ -2350,7 +2552,7 @@ Warmup 是在训练开始阶段，将学习率从 0 缓增到指定大小，而�
 如果不进行 Wamrup，那么模型一开始就快速地学习，由于梯度消失，模型对越靠后的层越敏感，也就是越靠后的层学习得越快，然后后面的层是以前面的层的输出为输入的，前面的层根本就没学好，所以后面的层虽然学得快，但却是建立在糟糕的输入基础上的。
 很快地，后面的层以糟糕的输入为基础到达了一个糟糕的局部最优点，此时它的学习开始放缓（因为已经到达了它认为的最优点附近），同时反向传播给前面层的梯度信号进一步变弱，这就导致了前面的层的梯度变得不准。但Adam 的更新量是常数量级的，梯度不准，但更新量依然是数量级，意味着可能就是一个常数量级的随机噪声了，于是学习方向开始不合理，前面的输出开始崩盘，导致后面的层也一并崩盘。
 如果 Post Norm 结构的模型不进行 Wamrup，我们能观察到的现象往往是：loss 快速收敛到一个常数附近，然后再训练一段时间，loss 开始发散，直至 NAN。 如果进行 Wamrup，那么留给模型足够多的时间进行“预热”，在这个过程中，主要是抑制了后面的层的学习速度，并且给了前面的层更多的优化时间，以促进每个层的同步优化。 这里的讨论前提是梯度消失，如果是 Pre Norm 之类的结果，没有明显的梯度消失现象，那么不加 Warmup 往往也可以成功训练。
-Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:12,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
+Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:13,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
 KV Cache 只能用于 Decoder 架构的模型，因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 KK 和 VV 可以缓存起来。
 KV Cache 推理过程 假设模型初始输入只有 11 个 token
 Att(Q,K,V)=softmax(q1k1⊤)v1 \\mathrmAtt(Q, K, V) = \\textsoftmax(\\mathbfq_1 \\mathbfk_1^\\top ) \\mathbfv_1 其中 : Q=(q1)∈R1×dQ = \\left( \\mathbfq_1 \\right) \\in \\mathbbR^1\\times d ， K=(k1)∈R1×dK = \\left( \\mathbfk_1 \\right) \\in \\mathbbR^1\\times d ， V=(v1)∈R1×dV = \\left( \\mathbfv_1 \\right) \\in \\mathbbR^1\\times d 当模型生成第 22 个 token 时，Attention 的计算如下：
@@ -2437,7 +2639,7 @@ BL⋅(512+64)=576⋅BLBL \\cdot (512+64) = 576 \\cdot BL forward
 MoveElision 优化策略: 省略此处的拼接 RoPE 部分和非 RoPE 部分的过程，而是直接分别计算量部分的额 Attention Score 并相加（考虑 qtkj⊤=qtCkjC⊤+qtRkjR⊤\\mathbfq_t\\mathbfk_j^\\top = \\mathbfq_t^C \\mathcalk_j^C^\\top+ \\mathbfq_t^R k_j^R^\\top )
 1 2 3 4 5 6 7 8 9 # MoveElision [B, 128, L, 512]*[B, 128, L, 512] + [B, 128, L, 64]*[B, 128, L, 64] attn_weights = ( torch.matmul(q_pe, k_pe.mT) + torch.matmul(q_nope, compressed_kv.unsqueeze(-3).mT) ) * self.softmax_scale attn_weights = nn.functional.softmax( attn_weights, dim=-1, dtype=torch.float32 ).to(q_nope.dtype) attn_output = torch.einsum(&#39;bhql,blc-&gt;bhqc&#39;, attn_weights, compressed_kv) attn_output = torch.einsum(&#39;bhqc,dhc-&gt;bqd&#39;, attn_output, out_absorbed) 作者认为没有必要再改变顺序，对模型参数进行预处理，将 WUKW^UK 与 WUQW^UQ 相乘，以及将 WUVW^UV 与 WOW^O 相乘。
 这是因为， WUKW^UK 与 WUQW^UQ 相乘后的结果可以视为 HH 个大小为 1536×5121536 \\times 512 的低秩（不超过 128）矩阵，而 WUVW^UV 与 WOW^O 相乘的结果可以视为 HH 个大小为 5120×5125120 \\times 512 的低秩矩阵。相比用这些特别大的低秩矩阵做投影，明显不如按照低秩分解形式依次相乘来得划算。
-Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:13,tag:"en",href:"/blogs/distributedtraining/",title:"分布式训练",description:"DP & DDP，TP，PP，ZeRO，混合精度，通讯",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
+Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:14,tag:"en",href:"/blogs/distributedtraining/",title:"分布式训练",description:"DP & DDP，TP，PP，ZeRO，混合精度，通讯",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
 基本流程：
 加载模型、数据至内存；
 创建 DP 模型；
@@ -2584,7 +2786,7 @@ GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism
 ZeRO: Memory Optimizations Toward Training Trillion Parameter Models
 Mixed Precision Training
 python-parallel-programmning-cookbook
-MPI Reduce and Allreduce`}).add({id:14,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
+MPI Reduce and Allreduce`}).add({id:15,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
 具体来说，对于一个事件，它的 自信息 大小与其发生概率有关。它是衡量与概率空间中单个事件或离散随机变量取值相关的信息量的一种 量度。
 它用信息的单位表示，例如 bit、nat 或是 hart，使用哪个单位取决于在计算中使用的对数的底。
 自信息的期望值 就是信息论中的 熵，它反映了 随机变量采样时的平均不确定程度。
