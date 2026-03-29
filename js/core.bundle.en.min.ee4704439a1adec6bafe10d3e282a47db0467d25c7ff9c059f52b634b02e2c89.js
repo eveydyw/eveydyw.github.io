@@ -1558,7 +1558,1080 @@ P(播放&gt;80%) = 0.73 \\mathbbP(\\text播放&gt;80\\%)~=~0.73 不能直接�
 最坏的情况下，物品塔需要做 nn 次推理。 实际上缓存的命中率非常高，99%的物品都会命中缓存，做推理给几千个候选物品，做粗排时物品塔只需要做几十次推理。 交叉塔：输入都是动态特征，必须做 nn 次推理。
 上层网络做 nn 次推理，给 nn 个物品打分。
 粗排模型的设计理念就是尽量减少推理的计算量，使得模型可以在线上给几千篇笔记打分。
-Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:9,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:9,tag:"en",href:"/blogs/recommendersystem/cross/",title:"RecommenderSystem-4-特征交叉",description:"【笔记】wangshusen-推荐系统：特征交叉",content:`Factorized Machine (FM) 因式分解机 线性模型 dd 个特征，记作 x=[x1,⋯ ,xd]\\mathbfx=\\beginbmatrixx_1,\\cdots,x_d\\endbmatrix 。
+线性模型：
+p=b+∑i=1dwixi p = b+\\sum_i = 1^dw_ix_i bb ：偏移项 bias。
+wiw_i ：每个特征的权重。
+∑i=1dwixi\\sum_i=1^dw_ix_i ：对 dd 个特征的连加。
+pp ：对目标的预估。
+方便起见没有用激活函数。
+模型有 d+1d+1 个参数： w=[w1,⋯ ,wd]\\mathbfw=\\beginbmatrixw_1,\\cdots,w_d\\endbmatrix 和 bb 。
+预测是特征的加权和。（只有加，没有乘，即特征之间没有交叉）
+二阶交叉特征 有 dd 个特征，记作 x=[x1,⋯ ,xd]\\mathbfx=\\beginbmatrixx_1,\\cdots,x_d\\endbmatrix 。
+线性模型 + 二阶交叉特征：
+p=b+∑i=1dwixi+∑i=1d∑j=i+1duijxixj. p = b + \\sum_i = 1^dw_ix_i + \\sum_i = 1^d\\sum_j = i+1^du_ijx_ix_j. xixjx_ix_j ：两个特征的交叉。
+uiju_ij ：权重。
+模型有 O(d2)O(d^2) 个参数。大多数的参数是交叉特征的权重 U\\mathbfU 。
+如果 dd 比较小，这样的模型没有问题。
+如果 dd 很大，那么参数数量就太大了，计算代价会很大，而且容易出现 overfitting。
+【例】
+假设特征是房屋的大小和周边楼盘每平米的单价，目标是估计房屋的价格。仅仅用房屋的大小和每平米的单价的加权和是估不准房屋价格的。如果做特征交叉，让房屋大小和每平米单价这两个特征相乘，就能把房价估得很准。
+Factorized Machine (FM) U∈Rd×d\\mathbfU \\in \\mathbbR^d \\times d 为对称矩阵表示交叉特征的权重。
+uiju_ij 表示 U\\mathbfU 的第 ii 行第 jj 列上的一个元素。
+对 U\\mathbfU 做低秩近似：
+U=VVT,V∈Rd×k,k≪duij≈viTvj \\beginalign \\mathbfU &amp;= \\mathbfV\\mathbfV^T, \\quad \\mathbfV \\in \\mathbbR^d \\times k, \\quad k \\ll d \\\\[7pt] u_i j &amp;\\approx \\mathbfv_i^T \\mathbfv_j \\endalign 将交叉特征的权重 uiju_ij 近似成向量 vi\\mathbfv_i 和 vj\\mathbfv_j 的内积得到 Factorized Machine (FM)：
+p=b+∑i=1dwixi+∑i=1d∑j=i+1d(viTvj)xixj. p=b+\\sum_i=1^dw_ix_i+\\sum_i=1^d\\sum_j=i+1^d(\\mathrmv_i^T\\mathrmv_j)x_ix_j. FM模型有 O(kd)O(kd) 个参数。 (k≪d)(k \\ll d) 。
+FM与二阶交叉特征的区别：在这里 FM 用向量 vi\\mathbfv_i 和 vj\\mathbfv_j 的内积作为交叉特征的权重。
+FM是线性模型的替代品，能用线性回归、逻辑回归的场景，都可以用FM。
+FM使用二阶交叉特征，表达能力比线性模型更强。
+通过做近似 uij≈viTvju_i j \\approx \\mathbfv_i^T \\mathbfv_j ，FM 把二阶交叉权重的数量从 O(d2)O(d^2) 降低到 O(kd)O(kd) 。
+FM 参数数量更少，使得推理的计算量更小，而且不容易出现过拟合。
+DCN 深度交叉网络 DCN V2: Improved Deep &amp; Cross Network and Practical Lessons for Web-scale Learning to Rank Systems
+深度交叉网络（DCN）用来代替简单的全连接网络，可以用于排序和召回。
+回顾 双塔模型:
+双塔是一种框架，而不是一种很具体的神经网络。
+用户塔和物品塔可以用任意的神经网络结构(全连接网络最简单)。
+多目标排序模型:
+输入是很多特征，输出是对点击率、点赞率等指标的预估。
+中间的神经网络负责对特征做变换，输出一个特征向量。这个神经网络被所有任务共享，所以叫做shared bottom，它的网络结构可以任意(全连接网络最简单)。如果用更好的神经网络结构预估的准确性会更高。
+MMOE模型
+三个是专家神经网络，用途是把各种输入的特征意识到新的特征。向量用于顶层的预估任务。
+这三个专家神经网络也可以用任意的结构。
+交叉层（Cross Layer) ​
+输入： x0\\mathbfx_0 ，经过了 ii 层之后神经网络输出 xi\\mathbfx_i 。
+向量 xi\\mathbfx_i 输入全连接层，全连接层输出向量 y\\mathbfy 。
+把最底层的输入向量 x0\\mathbfx_0 与向量 y\\mathbfy 做Hadamard Product（逐元素相乘）得到 z=x0∘y\\mathbfz = \\mathbfx_0 \\circ \\mathbfy 。
+向量 xi\\mathbfx_i 和 向量 z\\mathbfz 分别是输入和输出，两者形状一致，将两者相加得到 xi+1=xi+z\\mathbfx_i+1 = \\mathbfx_i + \\mathbfz (这个操作类似于Resnet中的跳跃连接 skip connection)。
+该交叉层的参数全都在全连接层里，其余的操作是向量Hadamard Product和向量加法，均无参数。
+​
+​
+交叉层的输入是两个向量： x0\\mathbfx_0 和 xi\\mathbfx_i 。
+x0\\mathbfx_0 是整个神经网络最底层的输入。
+xi\\mathbfx_i 是神经网络第 ii 层的输入。
+全连接层： W⋅xi+b\\mathbfW \\cdot \\mathbfx_i+\\mathbfb 。
+W\\mathbfW 和 b\\mathbfb 是全连接层中的参数，也是这个交叉层中全部的参数，需要在训练的过程中用梯度去更新。 把向量 x0\\mathbfx_0 与全连接层的输出做 Hadamard Product 即逐元素相乘 : x0∘(W⋅xi+b)\\mathbfx_0 \\circ \\left(\\mathbfW \\cdot \\mathbfx_i+\\mathbfb \\right) 。
+把 Hadamard Product的结果与 xi\\mathbfx_i 相加： x0∘(W⋅xi+b)+xi\\mathbfx_0 \\circ \\left(\\mathbfW \\cdot \\mathbfx_i+\\mathbfb \\right) + \\mathbfx_i 。
+把输入与输出相加，即Resnet中的跳跃连接，可以防止梯度消失。 输出： xi+1=x0∘(W⋅xi+b)+xi\\mathbfx_i+1 = \\mathbfx_0 \\circ \\left(\\mathbfW \\cdot \\mathbfx_i+\\mathbfb \\right) + \\mathbfx_i ， 形状与 x0\\mathbfx_0 和 xi\\mathbfx_i 一致。即每个交叉层的输入和输出都是向量，而且形状相同。
+交叉网络（Cross Network） 交叉网络的输入： x0\\mathbfx_0 ，进入一个交叉层，交叉层输出向量 x1\\mathbfx_1 ：
+x1=x0∘(W0x0+b0)+x0 \\mathbfx_1=\\mathbfx_0\\circ(\\mathbfW_0\\mathbfx_0+\\mathbfb_0)+\\mathbfx_0 交叉层中的参数是 W0\\mathbfW_0 和 b0b_0 。
+把上一层的输出 x1\\mathbfx_1 和 最初的输入 x0\\mathbfx_0 输入下一个交叉层得到向量 x2\\mathbfx_2 ：
+x2=x0∘(W1x1+b1)+x1 \\mathbfx_2=\\mathbfx_0\\circ(\\mathbfW_1\\mathbfx_1+\\mathbfb_1)+\\mathbfx_1 交叉层的参数是 W1\\mathbfW_1 和 b1b_1 。
+重复这个过程可以加更多的交叉层，图中 x3\\mathbfx_3 为这个神经网络最终的输出。
+深度交叉网络（Deep &amp; Cross Network） ​
+DCN：把交叉网络跟普通的全连接网络结合起来。
+推荐系统召回和排序模型的输入是用户特征、物品特征、其他特征。
+把这些向量做concatenation，输入两个神经网络：全连接网络和交叉网络并联。
+两个神经网络各输出一个向量，把两个向量做concatenation，输入一个全连接层，全连接层输出一个向量。
+全连接网络、交叉网络、全连接层都拼到一起即为深度交叉网络DCN，用这样的高级神经网络结构比最简单的全连接网络效果更好。
+DCN可以用于召回和排序：
+双塔模型中的用户塔和物品塔。
+多目标排序模型中的share bottom。
+MMOE中的专家神经网络。
+LHUC（PPNet）Learning Hidden Unit Contributions (LHUC) LHUC起源于语音识别：
+Learning Hidden Unit Contributions for Unsupervised Acoustic Model Adaptation
+快手将LHUC应用在推荐精排，称作PPNet：
+快手落地万亿参数推荐精排模型
+LHUC 用于精排。
+语音识别中的LHUC 语音识别的输入是一段语音信号，我们希望用神经网络对输入的信号做变换得到更有效的表征，然后识别出语音中的文字。语音是人说的，不同的人声音会有所区别，所以最好是加入一些个性化即用到说话者的特征。
+最简单的特征就是说话者的id。对id做embedding得到一个向量，作为这个说话者的表征。
+【网络结构】
+​
+把语音信号输入全连接层，输出一个向量，把说话的特征输入另一个神经网络，输出一个向量。
+神经网络包含多个全连接层，最后一个全连接层的激活函数是 sigmoid×2\\mathrmsigmoid\\times 2 ，单独作用到每个元素上。
+即全连接层的输出向量每个元素都介于 00 和 22 之间。两个向量的形状必须完全一致。
+计算两个向量的 Hadamard Product，即对这两个向量逐元素相乘。这样可以把语音信号的特征跟说话者的特征两者相融合。
+语音信号有的特征被放大，有的特征被缩小，可以做到个性化。
+哈达马乘积得到一个向量，形状跟输入的两个向量是相同的，把这个向量输入下一个全连接层，输出一个形状相同的向量。
+把说话者的特征也输入一个神经网络，这个神经网络有多个全连接层，最后一层的激活函数也是 sigmoid×2\\mathrmsigmoid\\times 2 。神经网络输出一个向量，这个向量是对说话者的表征。
+两个向量的形状一样，求这两个向量的Hadamard Product，输出一个形状相同的向量。
+同理，这个向量是从语音信号中提取的特征，还结合了说话者的特征，做到了个性化。
+这个向量就是LHUC最终的输出。
+推荐系统排序模型中的LHUC ​
+在语音识别的应用中，两个输入的向量分别是语音信号和说话者的特征。
+在推荐系统的排序模型中，两个输入变成了物品特征和用户特征，物品特征相当于语音信号，用户特征相当于说话者的特征。
+SENet &amp; Bilinear Cross SENet：
+Squeeze-and-Excitation Networks
+SENet 用于推荐系统
+FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction
+SENet Field-wise加权 推荐系统用到一些离散特征如：物品id、物品类目、物品关键词等等。对这些特征做embedding得到很多个向量。
+设一共有 mm 个特征，每个特征都表示成一个 kk 维的向量，可以把所有特征表示成一个 m×km\\times k 的矩阵
+对矩阵的行做 Average pooling，得到一个 m×1m\\times 1 向量，向量的每个元素对应 11 个离散特征。例如第一个元素对应用户id。
+用一个全连接层和ReLU激活函数，把 m×1m\\times 1 向量压缩成 mr×1\\fracmr\\times 1 的向量。
+r&gt;1r&gt;1 为压缩比例。
+再用一个全连接层和 Sigmoid 函数恢复出 m×1m\\times 1 的向量。这个向量的元素都介于 00 和 11 之间。
+用右边的 m×1m\\times 1 向量对最左边的 m×km\\times k 矩阵的行做加权，把向量逐行乘到矩阵上得到最右边的矩阵。它的大小也是 m×km\\times k ，跟左边的矩阵一样大。
+例如，最右边矩阵的第2行等于最左边矩阵的第二行乘以 m×1m\\times 1 向量的第2个元素。中间 m×1m\\times 1 向量的作用就是对特征做加权。比方说学出物品id对任务的重要性不高，那么就给物品 id embedding 降权。
+为了方便把所有 mm 个离散特征都映射成 kk 维向量，其实这 mm 个向量的维度可以不同，不会影响SENet。
+SENet对每个向量做Average pooling 得到一个 m×1m \\times 1 向量，再用两个全连接层得到另一个 m×1m \\times 1 向量用来，对 mm 个向量做加权。
+最终SENet输出右边的 mm 个向量跟左边的 mm 个蓝色向量的形状完全相同。
+SENet 对离散特征做field-wise 加权。
+Field:
+用户 ID Embedding 是 64 维向量。
+向量的64个元素算一个field，获得相同的权重。
+如果有 mm 种离散特征，即 mm 个fields，那么权重向量是 mm 维。
+用这个向量的一个元素给一个field做加权，即 SENet会根据所有的特征自动判断每个field的特征重要性。重要的 field的权重高 不重要的field的权重低。
+Field 间特征交叉 把两个field 做交叉得到新的特征：例如把物品所在地点与用户所在地点各自做embedding，然后把两个embedding 向量做交叉。
+内积 xi\\mathbfx_i 和 xj\\mathbfx_j 是两个特征的embedding，求两者的内积得到实数 fijf_ij :
+fij=xi⊤xj f_ij =\\mathbfx_i^\\top \\mathbfx_j 如果有 mm 个fields，即有 mm 种离散特征，那么会算出 m2m^2 个实数。推荐系统中的 mm 的数量不是很大，量级也就是几十，所以按平方交叉特征不是很大。
+Hadamard Product xi\\mathbfx_i 和 xj\\mathbfx_j 是两个特征的embedding，求两者的Hadamard 乘积得到向量 fij\\mathbff_ij :
+fij=xi∘xj \\mathbff_ij =\\mathbfx_i \\circ \\mathbfx_j 如果有 mm 个fields，即有 mm 种离散特征，那么会算出 m2m^2 个向量。通常来说，如果用 Hadamard 乘积做特征交叉，必须要人工选一些pair做交叉，而不能对所有 mm 个fields 两两交叉。
+内积和 Hadamard Product都要求每个特征的embedding向量形状一样，都是 kk 维向量。
+Bilinear Cross 内积 xi\\mathbfx_i 和 xj\\mathbfx_j 是两个特征的embedding，形状可以不一致，计算内积得到实数 fijf_ij :
+fij=xi⊤Wijxj f_ij =\\mathbfx_i^\\top \\mathbfW_ij \\mathbfx_j fijf_ij 是两个fields的交叉，如果有 mm 个fields，即有 mm 种离散特征，那么会算出 m2m^2 个实数。交叉特征的数量不是很大。
+做 Bilinear Cross 的时候，需要很多 Wij\\mathbfW_ij 这样的参数矩阵。如果有 mm 个fields，那么有 m22\\fracm^22 的参数矩阵。假设每个参数矩阵的大小都是 64×6464 \\times 64 ，有1000个这样的参数矩阵，那么Bilinear Cross 参数量是400万。参数数量太大了，不太可行。
+需要人工指定某些相关的，而且重要的特征做交叉，而不能让所有特征做两两交叉来减少参数数量。
+Hadamard Product xi\\mathbfx_i 和 xj\\mathbfx_j 是两个特征的embedding，形状可以不一致。先把参数矩阵 Wij\\mathbfW_ij 与特征向量 xj\\mathbfx_j 相乘 得到一个向量，再求 xi\\mathbfx_i 与其的 Hadamard Product：
+fij=xi∘(Wijxj) \\mathbff_ij =\\mathbfx_i \\circ (\\mathbfW_ij\\mathbfx_j) 如果有 mm 个fields，即有 mm 种离散特征，那么会算出 m2m^2 个向量。对 m2m^2 的向量做concatenation 得到的向量维度太大了，而且其中大多数都是无意义的特征。
+实践中最好人工指定一部分特征做交叉，而不是让所有 mm 个特征两两交叉。这样既可以减少参数的数量，也能让concatenation之后的向量变小。
+FiBiNet FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction
+对物品id、物品类目等离散特征做embedding，用一个向量表示一个特征。把这些特征向量做concatenation得到一个高维向量。
+可以直接把这个向量跟连续特征拼起来，作为排序模型的输入，效果不错。 FiBiNet做了其他的特征变换，实践中是有效的。 对这些 embedding 向量做Bilinear Cross 得到很多交叉特征，拼接成一个向量。
+先用 SENet 对应 embedding 向量做加权得到同样大小的向量。再对这些向量做摆 Bilinear Cross 得到很多交叉特征，拼接成一个向量。 （小红书没有用 Bilinear Cross直接做的 concatenation）
+FiBiNet 对离散特征变换之后得到 33 组特征向量，对他们做 concatenation 和变换之后的连续特征一起输入上层的神经网络。
+跟简单的排序模型相比，FiBiNet的区别在于 FiBiNet 用SENet加权和Bilinear Cross。
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:10,tag:"en",href:"/blogs/recommendersystem/lastn/",title:"RecommenderSystem-5-行为序列",description:"【笔记】wangshusen-推荐系统：行为序列",content:`用户行为序列建模 用户行为序列叫做LastN， 意为用户最近交互过的 nn 个物品，用户的LastN行为序列可以反映出用户对什么样的物品感兴趣。
+Deep Neural Networks for YouTube Recommendations
+LastN：用户最近的 nn 次交互（点击、点赞等）的物品ID。
+对LastN 物品ID做embedding得到 nn 个向量。
+把 nn 个物品id映射成 nn 个向量，最后对向量取平均得到 11 个向量，作为用户的 11 种特征。
+适用于召回双塔模型、粗排三塔模型、精排模型。
+对点击的 LastN，即用户最近点击过的 nn 个物品做embedding， 得到n个向量，求这些向量的平均得到一个向量。（效果更好的方法是attention，但是计算量更大）。
+用户类似的行为还有点赞、收藏、转发、评论、完播等等。同样记录这些行为的 LastN物品id，对这些id做embedding。然后对同一种行为的向量取平均。
+用这种方法点击、点赞、收藏、转发等行为的LastN被表征为多个向量，把这些向量拼起来作为一种用户特征，用于召回或者排序模型
+实际用LastN的时候，不只是用物品id，还用物品的其他特征，比如物品类目。把 id embedding 和其他特征的 embedding 拼在一起比只用 id embedding 效果更好。
+DIN模型 Deep Interest Network for Click-Through Rate Prediction
+DIN用加权平均代替平均，即注意力机制 (attention)。
+权重：候选物品与用户LastN物品的相似度。（哪个LastN物品跟候选物品越相似，它的权重就越高）
+​
+红色的向量 x1\\mathbfx_1 到 xn\\mathbfx_n 是用户交互过的LastN物品的向量表征。
+蓝色的向量 q\\mathbfq 是候选物品的向量表征。
+候选物品：粗排选出的500个物品即为精排的候选物品。
+精排模型给每个候选物品打分，分数表示用户对候选物品的兴趣。最后根据分数的高低给这500个候选物品做排序，保留分数最高的几十个展示给用户。
+计算相似度：计算向量 xi\\mathbfx_i 与候选物品 q\\mathbfq 的相似度（内积，cos）记作 αi\\alpha_i ，是个实数。每个 α\\alpha 对应一个 x\\mathbfx 向量。
+把 α\\alpha 与对应的向量 x\\mathbfx 相乘，然后把结果相加，得到上面紫色的向量。紫色向量就是 LastN 向量的加权和。权重是相似度 α\\alpha 。
+总结 对于某候选物品，计算它与用户LastN物品的相似度。得到 α1\\alpha_1 ~ αn\\alpha_n 。
+以相似度为权重，求用户LastN物品向量的加权和，结果是一个向量。
+把得到的向量作为一种用户特征，输入排序模型，预估（用户，候选物品）的点击率、点赞率等指标。这些指标会决定候选物品的排序。
+本质是注意力机制（attention)
+简单平均 V.S. 注意力机制 简单平均和注意力机制都适用于精排模型。
+简单平均适用于双塔模型、三塔模型。
+简单平均只需要用到LastN，属于用户自身的特征。
+把LastN向量的平均作为用户塔的输入。
+注意力机制不适用于双塔模型、三塔模型。
+注意力机制需要用到LastN+ 候选物品。
+用户塔看不到候选物品，不能把注意力机制用在用户塔。
+SIM模型 DIN模型 计算用户LastN向量的加权平均。
+权重是候选物品与LastN物品的相似度。
+缺点：
+注意力层的计算量 ∝n\\propto n （用户行为序列的长度）。只能记录最近几百个物品，否则计算量太大。
+缺点：关注短期兴趣，遗忘长期兴趣。
+让记录的行为序列变长，可以显著提升推荐系统所有的指标。但是暴力增加序列长度带来的收益不够多。
+改进：
+目标：保留用户长期行为序列（ nn 很大）而且计算量不会过大。
+改进DIN：
+DIN对 LastN 向量做加权平均，权重是相似度。
+如果某LastN物品与候选物品差异很大，则权重接近零。
+快速排除掉与候选物品无关的LastN物品，降低注意力层的计算量。
+SIM模型 Search-based User Interest Modeling with Lifelong Sequential Behavior Data for Click-Through Rate Prediction
+保留用户长期行为记录， nn 的大小可以是几千 （如果不用SIM， nn 的大小一般也就是一两百）。
+对于每个候选物品，在用户LastN记录中做快速查找，找到 kk 个相似物品。( kk 是个比较小的数，比如 kk 等于 100100 )
+把LastN变成TopK，然后输入到注意力层。
+SIM模型减小计算量（从 nn 降到 kk )
+步骤 查找 方法一：Hard Search (根据规则做筛选)
+根据候选物品的类目，保留LastN物品中类目相同的。
+简单，快速，无需训练。
+方法二：Soft Search (向量的最近邻查找)
+把物品做 embedding 变成向量。
+把候选物品向量作为query，做 k近邻查找，保留LastN物品中最接近的 kk 个。
+效果更好，编程实现更复杂。
+注意力机制 第一步的查找把LastN物品缩小到了top k排除掉的物品大多跟候选物品无关。
+注意力层输出的向量作为用户行为特征，与其他特征一起作为精排模型的输入，用于预估点击率等指标。
+Trick：使用时间信息
+用户与某个LastN物品的交互时刻距今为 δ\\delta 。(比如发生在1000个小时之前，那么 δ\\delta 就等于1000)
+δ\\delta 是个连续值，对 δ\\delta 做离散化，划分成很多区间，（最近1天，7天，30天，1年， 1年以上）。离散化之后，再做 embedding 变成向量 d\\mathbfd 。
+现在每个拉斯特物品有两个向量，把两个向量做 concatenation 表征一个LastN物品
+向量 x\\mathbfx 是物品embedding。
+向量 d\\mathbfd 是时间的embedding。
+候选物品的表征不需要对时间做embedding。
+把这些向量都输入注意力层，然后输出一个向量，输出的紫色向量就是对用户兴趣的表征。
+为什么SIM使用时间信息?
+DIN的序列短，记录用户近期行为。
+SIM的序列长，记录用户长期行为。
+时间越久远，重要性越低。
+模型预测点击率的时候，应该把时间也考虑到。SIM论文中的实验表明，使用时间信息可以带来显著的提升。
+实验结论 长序列 (长期兴趣）优于短序列(近期兴趣)。
+注意力机制优于简单平均。
+soft search 还是 hard search？取决于工程基建。
+soft search的预估准确率优于hard search。
+hard search实现起来更容易。
+使用时间信息有提升。
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:11,tag:"en",href:"/blogs/recommendersystem/rerank/",title:"RecommenderSystem-6-重排",description:"【笔记】wangshusen-推荐系统：重排",content:`推荐系统中的多样性 如果曝光给用户的物品两两之间不相似，就说明推荐的结果具有多样性。
+物品相似性的度量 基于物品 属性标签。两个物品有越多相同的标签，则说明两个物品越相似。
+类目、品牌、关键词 ···· 基于物品 向量表征。两个物品向量余弦值越大，则我们认为两个物品越相似。并不是所有的向量表征方法都适用于多样性问题。
+用召回的双塔模型学到的物品向量（不好)
+基于内容的向量表征 （就是用 cv 和 nlp 模型提取图片和文字的特征向量）（好)
+基于物品属性标签 物品属性标签：类目、品牌、关键词····这些标签通常是由 cv 和 lp 算法根据图文内容推断出的。
+根据一级类目、二级类目、品牌计算相似度。
+物品 ii ：美妆、彩妆、香奈儿。
+物品 jj ：美妆、香水、香奈儿。
+相似度： sim1(i,j)=1\\textsim_1(i, j)= 1 ， sim2(i,j)=0\\textsim_2(i, j)= 0 ， sim3(i,j)=1\\textsim_3(i, j)= 1 。表示一级类目相同，二级类目不同，品牌相同。对三个分数求加分和即可得到相似度的总分，其中的权重需要根据经验设置。
+基于物品向量表征 双塔模型的两个塔分别把用户特征和物品特征映射成向量，记作 a\\mathbfa 和 b\\mathbfb 。两个向量的余弦相似度表示用户对物品的兴趣。
+用在多样性问题上，只需要物品塔的输出。物品塔把每个物品表征为一个向量 b\\mathbfb ， 如果两个物品相似，则向量表征的内积相似度比较大，或者余弦相似度比较大。
+如果把双塔学到的物品表征用在多样性问题上也是 ok 的，但是效果一般。
+原因：推荐系统中的头部现象很严重，曝光和点击都集中在少数物品，新物品和长尾物品的曝光和点击次数都很少，双塔模型学不好它们的向量表征。如果用物品塔输出的向量计算物品相似度，处理不好新物品和长尾物品。最终多样性算法的效果很差。
+基于图文内容的物品向量表征 以小红书的图文笔记为例，笔记中有几张图和几段文字。
+考虑最简单的情况，笔记只有一张图，用 CNN 提取图片的特征得到一个向量，用 BERT 提取文字的特征得到另一个向量，把这两个向量拼起来就是一篇图文笔记的向量表征。
+难点：如何训练 CNN 和 BERT？
+如果用外界公开的数据集做训练，那么迁移到小红书的数据上效果不好。 如果用小红书自己的数据，是不是还得让人工做标注呢？ 【CLIP】 Learning Transferable Visual Models From Natural Language Supervision
+CLIP 是当前公认最有效的预训练方法 。
+思想：对于图片一文本二元组；预测图文是否匹配。
+优势：无需人工标注。小红书的笔记天然包含图片+文字，大部分笔记图文相关。
+做预训练的时候，同一篇笔记的图片和文字作为正样本，图片的向量和文字的向量应该高度相似。
+如果图片和文字来自不同的笔记，那么就可以作为一组负样本。
+每一行是一篇笔记，包含一张图片和一段文字。
+同一篇笔记的图片和文字组成 正样本，图片的向量与文字的向量应该有较高的相似性。
+负样本：采用 batch 内负样本（例如，第 1 篇笔记的图片与其他笔记的文字都可以组成负样本）
+设一个 batch 内有 mm 篇笔记，那么就有 mm 对正样本。
+一张图片可以跟 m−1m-1 条文本组成负样本。
+这个 batch 内一共有 m(m−1)m(m-1) 对负样本。
+提升多样性的方法 粗排和精排唯一的任务就是准确的做 point wise 打分。
+粗排和精排用 多目标模型 对物品做 point wise 打分，即把每个物品作为独立的个体，尽量准确预估点击交互时长。
+粗排和精排只做 point wise 打分，而不用考虑物品之间的关联。对于物品 ii ，模型输出点击率、交互率的预估，多个分数融合成一个分数 rewardi\\textreward_i ， rewardi\\textreward_i 表示用户对物品 ii 的兴趣，即 物品本身价值。
+粗排或者精排给 nn 个候选物品打分，得到分数 reward1\\textreward_1 , &hellip;, rewardn\\textreward_n ，对于粗排 nn 等于几千，对于精排 nn 等于几百。
+在粗排和精排打分之后都有后处理。后处理的主要作用是提升多样性。
+后处理需要从 nn 个候选物品中选出 kk 个，既要求他们的总分高，也需要他们有多样性。假如不考虑多样性，那么只需要根据 reward\\textreward 对 nn 个物品排序选出 Topk。
+在实践中增加曝光物品的多样性有利于业务指标，所以工业界在后处理阶段使用多样性算法。
+精排的后处理通常被称为 重排，他决定了 nn 个候选物品中有哪 kk 个最终获得曝光以及 kk 个物品展示给用户的顺序。
+粗排的后处理往往被大家忽视，其实粗排之后也需要多样性算法，而不是简单的从几千个品中选 reward\\textreward 最高的几百个。粗排之后的多样性算法也能提升业务指标。
+Maximal Marginal Relevance (MMR) 【多样性】
+精排给 nn 个候选物品打分，融合之后的分数为 reward1\\textreward_1 , &hellip;, rewardn\\textreward_n 。表示用户对物品的兴趣，即用户眼中物品的价值，对于精排 nn 等于几百。
+第 ii 和 jj 个物品的相似度记作 sim(i,j)\\mathrmsim(i,j) ，可以是物品标签计算出的，也可以是用向量表征计算出的。
+重排：从 nn 个物品中选出 kk 个，既要有高精排分数，也要有多样性。即 要结合 reward\\textreward 和 sim\\mathrmsim 这两种分数，从 nn 个物品中选出 kk 个作为最终曝光的结果。
+原理 左边的红色物品是已经选中的物品， 把它们记作集合 S\\mathcalS ， 右边蓝色的是尚未选中的物品记作集合 R\\mathcalR 。
+计算集合 R\\mathcalR 中每个物品 ii 的 Marginal Relevance 分数：
+MRi=θ⋅rewardi⏟物品 i 的精排分数−(1−θ)⋅max⁡j∈S sim(i,j)⏟物品 i 的多样性分数,i∈R,j∈S \\beginalign \\mathrmMR_i = \\theta \\cdot \\underbrace\\mathrmreward_i_\\text物品 i 的精排分数-(1-\\theta) \\cdot \\underbrace \\max_j\\in\\mathcalS \\mathrm~sim(i, j)_\\text物品 i 的多样性分数 , \\quad i \\in \\mathcalR, \\quad j \\in \\mathcalS \\endalign 物品 ii 的精排分数: 物品 ii 的价值，表示用户对物品 ii 的兴趣。它的值越大，则物品 ii 越应该被选中。
+物品 ii 的多样性分数： sim(i,j)\\mathrmsim(i,j) 关于 jj 求最大化消掉 jj 。
+ii 是未选中的物品， jj 是已选中的物品。
+关于 jj 求最大化可以衡量物品 ii 与 集合 S\\mathcalS 的相似度。
+假如物品 ii 与某个已经选中的物品 jj 相似，则这一项分数较大，对物品 ii 起抑制作用，不利于 ii 被选中
+适中的 θ\\theta 是介于 00 ~ 11 之间的参数，平衡物品的价值和多样性。
+θ\\theta 越大，则物品价值对排序的影响越大，多样性对排序的影响越小。 Maximal Marginal Relevance （MMR）：
+argmaxi∈RMRi \\beginalign \\mathrmargmax_i\\in \\mathcalR\\quad\\mathbfMR_i \\endalign 对于所有未选中的物品 ii 计算它的分数 MRi\\mathbfMR_i 并选出分数最高的物品。
+每一轮都需要计算集合 R\\mathcalR 中所有物品的 MR\\mathbfMR 分数，选出分数最高的，把这个物品从集合 R\\mathcalR 移到集合 S\\mathcalS 。
+算法流程 已选中的物品 S\\mathcalS 初始化为空集，未选中的物品 R\\mathcalR 初始化为全集 1,⋯ ,n\\1,\\cdots,n\\ 。此时还没有物品被选中，无需考虑多样性。
+选择精排分数 reward\\textreward 最高的物品，从集合 R\\mathcalR 移到集合 S\\mathcalS 。
+做 k−1k-1 轮循环：每一轮循环用 MMR 选出一个物品，当循环结束的时候一共选出了 kk 个物品
+计算集合 R\\mathcalR 中所有物品的分数 MRii∈R\\\\mathbfMR_i\\_i\\in \\mathcalR 。
+选出分数最高的物品，将其从集合 R\\mathcalR 移到 集合 S\\mathcalS 。
+由于集合 S\\mathcalS 发生了变化，物品的 MR\\mathbfMR 分数都会发生变化，所以下一轮要重新计算 MR\\mathbfMR 分数。
+滑动窗口 MMR:
+argmaxi∈Rθ⋅rewardi⏟物品 i 的精排分数−(1−θ)⋅max⁡j∈S sim(i,j)⏟物品 i 的多样性分数,i∈R,j∈S \\beginalign \\mathrmargmax_i\\in \\mathcalR \\left\\\\theta \\cdot \\underbrace\\mathrmreward_i_\\text物品 i 的精排分数-(1-\\theta) \\cdot \\underbrace \\max_j\\in\\mathcalS \\mathrm~sim(i, j)_\\text物品 i 的多样性分数 \\right\\ , \\quad i \\in \\mathcalR, \\quad j \\in \\mathcalS \\endalign 已选中的物品越多（即集合 S\\mathcalS 越大，越难找出物品 i∈Ri \\in \\mathcalR ，使得 ii 与 S\\mathcalS 中的物品都不相似。
+当集合 S\\mathcalS 很大时，所有物品 i 的多样性分数都非常大。设物品相似度 sim\\mathrmsim 的取值范围是 [0,1][0,1] 。当 SS 很大时’多样性分数 max⁡j∈S sim(i,j)\\max_j\\in\\mathcalS \\mathrm~sim(i,j) 总是约等于 11 ，导致 MMR 算法失效。
+解决方案：设置一个滑动窗口 W\\mathcalW ，比如最近选中的 1010 个物品，滑动窗口 W\\mathcalW 是集合 S\\mathcalS 的子集。用 W\\mathcalW 代替 MMR 公式中的 S\\mathcalS 。
+S\\mathcalS ：选中的物品。
+W\\mathcalW ：滑动窗口。
+R\\mathcalR ：未选中的物品。
+MMR 算法每一轮需要从集合 R\\mathcalR 中选出一个物品，它的精排分数高，而且与滑动窗口中的物品都不相似。
+标准的 MMR：
+arg⁡max⁡i∈Rθ⋅rewardi−(1−θ)⋅max⁡j∈Ssim(i,j) \\beginalign \\arg\\max_i \\in R \\left\\ \\theta \\cdot \\textreward_i - (1 - \\theta) \\cdot \\max_j \\in \\mathcalS \\textsim(i, j) \\right\\ \\endalign 使用滑动窗口的 MMR
+arg⁡max⁡i∈Rθ⋅rewardi−(1−θ)⋅max⁡j∈Wsim(i,j) \\beginalign \\arg\\max_i \\in R \\left\\ \\theta \\cdot \\textreward_i - (1 - \\theta) \\cdot \\max_j \\in \\mathcalW \\textsim(i, j) \\right\\ \\endalign 工业界实际的重排都会使用滑动窗口，滑动窗口的直观解释：
+给用户曝光的物品应当具有多样性，即物品两两之间不相似。但没有必要让第 30 个物品跟第一个物品不相似。用户看到第 30 个物品的时候，大概率已经忘记了第 1 个物品是什么。
+两个离得远的物品可以相似，不会影响用户体验。但如果两个物品离得比较近，就应当有较大的差异，否则用户可以感知到多样性不好。
+比方说设置一个大小为 1010 的滑动窗口，那么 MMR 算法就会选一个物品，它跟前 1010 个物品都不相似，但可以与更早之前的物品相似。
+业务规则约束下的多样性算法 重排的规则 规则的优先级要高于多样性算法。
+最多连续出现 kk 篇某种笔记 小红书推荐系统的物品分为图文笔记、视频笔记。
+最多连续出现 k=5k=5 篇图文笔记，最多连续出现 k=5k=5 篇视频笔记。
+如果排 ii 到 i+4i+4 的全都是图文笔记，那么排在 i+5i+5 的必须是视频笔记。
+假如已经连续出现了 55 篇图文笔记，那么下一篇必须要从视频笔记中挑选。
+每 kk 篇笔记最多出现 11 篇某种笔记 运营推广笔记的精排分会乘以大于 1 的系数（boost)，帮助笔记获得更多曝光。靠 boost 才排上去的笔记肯定不是用户最感兴趣的，如果出太多了会影响用户体验。
+为了防止 boost 影响体验，限制每 k=9k=9 篇笔记最多出现 11 篇运营推广笔记。
+如果排第 ii 位的是运营推广笔记，那么排 i+1i+1 到 i+8i+8 的不能是运营推广笔记。 前 tt 篇笔记最多出现 kk 篇某种笔记 排名前 tt 篇笔记最容易被看到，对用户体验最重要。(小红书的 top 4 为首屏)
+小红书推荐系统有带电商卡片的笔记，过多可能会影响体验。
+前 t=1t=1 篇笔记最多出现 k=0k=0 篇带电商卡片的笔记。
+前 t=4t=4 篇笔记最多出现 k=1k=1 篇带电商卡片的笔记。
+MMR+重排规则 MMR 每一轮选出一个物品:
+argmaxi∈Rθ⋅rewardi−(1−θ)⋅max⁡j∈S sim(i,j),i∈R,j∈S \\beginalign \\mathrmargmax_i\\in \\mathcalR \\left\\\\theta \\cdot \\mathrmreward_i-(1-\\theta) \\cdot \\max_j\\in\\mathcalS \\mathrm~sim(i, j) \\right\\ , \\quad i \\in \\mathcalR, \\quad j \\in \\mathcalS \\endalign 重排结合 MMR 与规则，在满足规则的前提下最大化 MR\\mathbfMR 。
+MMR 每一轮都用上面的公式从集合 R\\mathcalR 中选一个物品，在用公式选物品之前，先用规则排除掉 R\\mathcalR 中的部分物品，得到子集 R′\\mathcalR^\\prime 。
+例： 前 3 篇笔记都已经选出来了，现在要挑选第 4 篇笔记，排在第 2 的是带电商卡片的笔记，那么根据规则，第 4 篇不可以带电商卡片，要把集合 R\\mathcalR 中带这张卡片的笔记全都排除掉，得到 R\\mathcalR 的一个子集 R′\\mathcalR^\\prime ，只能从这个子集中做选择。 MMR 公式中的 R\\mathcalR 替换成子集 R′\\mathcalR^\\prime ，选中的物品符合规则。
+DPP 多样性算法 DPP：行列式点过程。
+DPP 的目标是从一个集合中选出尽量多样化的物品，与重排的目标非常契合。
+DPP：数学基础 超平行体 二维空间 的超平行体为平行四边形。
+v1\\mathbfv_1 和 v2\\mathbfv_2 是平行四边形的两条边，它们唯一确定了一个平行四边形。
+平行四边形中的点 x\\mathbfx 可以表示为：
+x=α1v1+α2v2 \\beginalign \\mathbfx = \\alpha_1 \\mathbfv_1+\\alpha_2 \\mathbfv_2 \\endalign 系数 α1\\alpha_1 和 α2\\alpha_2 取值范围是 [0,1][0,1] . 三维空间 中超平行体是平行六面体。
+v1\\mathbfv_1 、 v2\\mathbfv_2 、 v2\\mathbfv_2 是平行六面体的三条边，它们唯一确定了一个平行六面体。
+平行六面体中的点 x\\mathbfx 都可以表示为：
+x=α1v1+α2v2+α3v3 \\beginalign \\mathbfx = \\alpha_1 \\mathbfv_1+\\alpha_2 \\mathbfv_2 + \\alpha_3 \\mathbfv_3 \\endalign 系数 α1\\alpha_1 、 α2\\alpha_2 和 α3\\alpha_3 取值范围是 [0,1][0,1] 。
+kk 维超平行体
+一组向量 v1,…,vk∈Rd\\mathbfv_1, \\dots, \\mathbfv_k \\in \\mathbbR^d 可以确定一个 kk 维超平行体，这些向量是超平行体的边：
+P(v1,…,vk)=α1v1+⋯+αkvk∣0≤α1,…,αk≤1 \\beginalign P(\\mathbfv_1, \\dots, \\mathbfv_k) = \\ \\alpha_1 \\mathbfv_1 + \\dots + \\alpha_k \\mathbfv_k \\mid 0 \\leq \\alpha_1, \\dots, \\alpha_k \\leq 1 \\ \\endalign 超平行体中的点可以写成 v1,…,vk\\mathbfv_1, \\dots, \\mathbfv_k 的加权和。
+系数 α1,…,αk∈[0,1]\\alpha_1, \\dots, \\alpha_k \\in [0,1] 。
+kk 是向量的数量， dd 是向量的维度。要求 k≤dk \\leq d ：
+比如 d=3d = 3 维空间中有 k=2k = 2 平行四边形。
+如果 d=2d=2 ，那么 k≠3k \\neq 3 ，二维空间中不能有三维的平行六面体。
+如果超平行体有意义， 那么 v1,…,vk\\mathbfv_1, \\dots, \\mathbfv_k 必须线性独立。如果 v1,…,vk\\mathbfv_1, \\dots, \\mathbfv_k 线性相关，则体积 vol(P)=0\\textvol(P) = 0 。
+线性相关：某个向量可以表示为其余向量的加权和。例如：有 k=3k = 3 个向量，它们线性相关，那么就会落在同一个平面上，以这三个向量为边的平行六面体的体积等于 00 ，这个超平行体就像是被拍扁了一样。 面积和体积 平行四边形的面积 以 v1\\mathbfv_1 为底，计算高 q2\\mathbfq_2 :
+在左边图中， 以 v1\\mathbfv_1 为底，计算高 q2\\mathbfq_2 , 两个向量必须正交。两个向量长度的乘积即为平行四边形的面积。
+给定向量 v1\\mathbfv_1 和 v2\\mathbfv_2 ，计算 v2\\mathbfv_2 在 v1\\mathbfv_1 方向上的投影：
+Projv1(v2)=v1Tv2∥v1∥22⋅v1 \\beginalign \\textProj_\\mathbfv_1(\\mathbfv_2) = \\frac\\mathbfv_1^T \\mathbfv_2\\|\\mathbfv_1\\|_2^2 \\cdot \\mathbfv_1 \\endalign 计算出的向量跟 v1\\mathbfv_1 的方向相同，中间图中的红色向量即为 v2\\mathbfv_2 在 v1\\mathbfv_1 方向上的投影。
+计算 q2\\mathbfq_2 ： q2\\mathbfq_2 等于 v2\\mathbfv_2 减去 v2\\mathbfv_2 在 v1\\mathbfv_1 上的投影：
+q2=v2−Projv1(v2) \\beginalign \\mathbfq_2 = \\mathbfv_2 - \\textProj_\\mathbfv_1(\\mathbfv_2) \\endalign 性质：底 v1\\mathbfv_1 与高 q2\\mathbfq_2 正交；底 v1\\mathbfv_1 和高 q2\\mathbfq_2 长度的乘积即为平行四边形的面积.
+以 v2\\mathbfv_2 为底，计算高 q1\\mathbfq_1 :
+给定向量 v1\\mathbfv_1 和 v2\\mathbfv_2 ，计算 v1\\mathbfv_1 在 v2\\mathbfv_2 方向上的投影：
+Projv2(v1)=v1Tv2∥v2∥22⋅v2 \\beginalign \\textProj_\\mathbfv_2(\\mathbfv_1) = \\frac\\mathbfv_1^T \\mathbfv_2\\|\\mathbfv_2\\|_2^2 \\cdot \\mathbfv_2 \\endalign 计算出的向量跟 v2\\mathbfv_2 的方向相同，中间图中的红色向量即为 v1\\mathbfv_1 在 v2\\mathbfv_2 方向上的投影。
+计算 q1\\mathbfq_1 ： q1\\mathbfq_1 等于 v1\\mathbfv_1 减去 v1\\mathbfv_1 在 v2\\mathbfv_2 上的投影
+q2=v1−Projv2(v1) \\beginalign \\mathbfq_2 = \\mathbfv_1 - \\textProj_\\mathbfv_2(\\mathbfv_1) \\endalign 性质：底 v2\\mathbfv_2 与高 q1\\mathbfq_1 正交；底 v2\\mathbfv_2 和高 q1\\mathbfq_1 长度的乘积即为平行四边形的面积
+平行六面体的体积 以 v1\\mathbfv_1 和 v2\\mathbfv_2 为边组成平行四边形 P(v1,v2)\\mathcalP(\\mathbfv_1, \\mathbfv_2) ，这个平行四边形 P(v1,v2)\\mathcalP(\\mathbfv_1, \\mathbfv_2) 是平行六面体的底向量， q3\\mathbfq_3 是平行六面体的高，垂直于 v1\\mathbfv_1 和 v2\\mathbfv_2 ，用底面积乘以 q3\\mathbfq_3 的长度即为平行六面体 P(v1,v2,v3)\\mathcalP(\\mathbfv_1, \\mathbfv_2, \\mathbfv_3) 的体积。
+**【问题】**如果固定向量 v1,v2,v3\\mathbfv_1, \\mathbfv_2, \\mathbfv_3 的长度，平行六面体的体积何时最大化，何时最小化？
+设 v1,v2,v3\\mathbfv_1, \\mathbfv_2, \\mathbfv_3 都是单位向量，即他们的二范数都等于 11 。
+当三个向量正交时, 平行六面体为正方体，体积最大， vol=1\\textvol=1 。
+当三个向量线性相关时，体积最小， vol=0\\textvol=0 。
+衡量物品多样性 给定 kk 个物品，把它们表征为 单位向量 v1,…,vk∈Rd\\mathbfv_1, \\dots, \\mathbfv_k \\in \\mathbbR^d ,（ d≥kd \\ge k )。向量最好是用 CLIP 学出的图文内容表征。
+把它们作为矩阵 V∈Rd×k\\mathbfV \\in \\mathbbR^d \\times k 的列。
+设 d≥kd \\ge k ，行列式与体积满足：
+det(VTV)=vol(P(v1,…,vk))2 \\beginalign \\textdet(\\mathbfV^T \\mathbfV) = \\textvol(\\mathcalP(\\mathbfv_1, \\dots, \\mathbfv_k))^2 \\endalign 用超平行体的体积衡量物品的多样性，体积介于 00 和 11 之间：
+如果 v1,…,vk\\mathbfv_1,\\dots,\\mathbfv_k 两两正交（多样性好），则体积最大化， vol=1\\textvol=1 。
+如果 v1,…,vk\\mathbfv_1,\\dots,\\mathbfv_k 线性相关（多样性差），则体积最小化， vol=0\\textvol=0 。
+因此，可以用行列式 det(VTV)\\textdet(\\mathbfV^T \\mathbfV) 衡量向量 v1,…,vk\\mathbfv_1,\\dots,\\mathbfv_k 的多样性。
+多样性问题 精排给 nn 个物品打分，把融合之后的分数记作： reward1\\textreward_1 , &hellip;, rewardn\\textreward_n ，他们表示物品的价值。
+每个物品还有一个向量表征，通常是基于图文内容计算出的向量，把这 nn 个物品的向量表征记作： v1,…,vk∈Rd\\mathbfv_1, \\dots, \\mathbfv_k \\in \\mathbbR^d 重排阶段：从 nn 个物品中选出 kk 个物品，组成集合 S\\mathcalS 。选择考虑的两个因素：
+物品价值大：分数之和 ∑j∈Srewardj\\sum_j \\in \\mathcalS \\textreward_j 越大越好。
+多样性好： S\\mathcalS 中 kk 个向量组成的超平形体 P(S)\\mathcalP(\\mathcalS) 的体积越大越好。
+集合 S\\mathcalS 中的 kk 个物品的向量作为列，组成矩阵 VS∈Rd×k\\mathbfV_\\mathcalS \\in \\mathbbR^d \\times k ，每个列向量对应一个物品，一共有 kk 个向量，每个向量都是 dd 维。
+以这 kk 个向量作为边，组成超平形体 P(S)\\mathcalP(\\mathcalS) 。
+体积 vol(P(S))\\textvol(\\mathcalP(\\mathcalS)) 可以衡量 S\\mathcalS 中物品的多样性。
+设 k≤dk \\le d ，行列式与体积满足：
+det(VSTVS)=vol(P(S))2 \\beginalign \\textdet(\\mathbfV_S^T \\mathbfV_S) = \\textvol(\\mathcalP(S))^2 \\endalign 这个公式说明行列式跟体积是等价的，因此可以用行列式衡量向量的多样性，多样性越好，则行列式就会越大。
+行列式点过程 (DPP) DPP 的基本思想就是用行列式衡量物品多样性，DPP 是一种传统的统计机器学习方法，目标函数就是前面定义的行列式的对数，它可以度量集合 S\\mathcalS 中向量的多样性
+DPP 要求从 nn 个候选物品中选出 kk 个组成集合 S\\mathcalS ，使得行列式的对数最大化，严格来说以下公式叫做 kDPP
+arg⁡max⁡S:∣S∣=klog⁡det⁡(VSTVS) \\beginalign \\arg\\max_S : |S| = k \\log \\det(\\mathbfV_\\mathcalS^T \\mathbfV_\\mathcalS) \\endalign Hulu 研究团队将 DPP 应用于推荐系统优化，论文的主要贡献在于快速求解这个公式：
+Fast Greedy MAP Inference for Determinantal Point Process to Improve Recommendation Diversity
+arg⁡max⁡S:∣S∣=kθ⋅(∑j∈Srewardj)+(1−θ)⋅log⁡det⁡(VSTVS) \\beginalign \\arg\\max_S : |S| = k \\left\\ \\theta \\cdot \\left( \\sum_j \\in S \\textreward_j \\right) + (1 - \\theta) \\cdot \\log \\det(\\mathbfV_\\mathcalS^T \\mathbfV_\\mathcalS) \\right\\ \\endalign ∑j∈Srewardj\\sum_j \\in S \\textreward_j : 集合 S\\mathcalS 中物品的 reward\\textreward 之和，越大说明选中的物品越符合用户兴趣。
+log⁡det⁡(VSTVS)\\log \\det(\\mathbfV_\\mathcalS^T \\mathbfV_\\mathcalS) : 行列式的对数，测量集合 S\\mathcalS 中物品的多样性，越大说明多样性越好。
+arg⁡max⁡S:∣S∣=kθ⋅(∑j∈Srewardj)+(1−θ)⋅log⁡det⁡(VSTVS⏟AS(k×k)) \\beginalign \\arg\\max_\\mathcalS : |\\mathcalS| = k \\left\\ \\theta \\cdot \\left( \\sum_j \\in \\mathcalS \\textreward_j \\right) + (1 - \\theta) \\cdot \\log \\det( \\underbrace \\mathbfV_S^T \\mathbfV_S_\\mathbfA_\\mathcalS (k \\times k) )\\right\\ \\endalign arg⁡max⁡S:∣S∣=kθ⋅(∑j∈Srewardj)+(1−θ)⋅log⁡det⁡(AS) \\beginalign \\arg\\max_\\mathcalS : |\\mathcalS| = k \\left\\ \\theta \\cdot \\left( \\sum_j \\in \\mathcalS \\textreward_j \\right) + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalS) \\right\\ \\endalign 设 A\\mathbfA 为 n×nn \\times n 的矩阵（ nn 表示一共有 nn 个候选物品）， A\\mathbfA 的 (i,j)(i,j) 元素为 aij=viTvja_ij = \\mathbfv_i^T \\mathbfv_j 。
+给定向量 v1,…,vn∈Rd\\mathbfv_1, \\dots, \\mathbfv_n \\in \\mathbbR^d ，需要 O(n2d)O(n^2d) 时间计算 A\\mathbfA 。
+AS=VSTVS\\mathbfA_\\mathcalS = \\mathbfV_\\mathcalS^T \\mathbfV_\\mathcalS 为 A\\mathbfA 的一个 k×kk \\times k 子矩阵。 如果 i,j∈Si, j \\in \\mathcalS ，则 aija_ij 是 AS\\mathbfA_\\mathcalS 的一个元素。
+求解 DPP DPP 是一个组合优化问题，从集合 1,…,n\\1, \\dots, n\\ 中选出一个大小为 kk 的子集 S\\mathcalS 。DPP无法精确求解，因为DPP是个np- hard的问题，通常会用贪心算法近似求解DPP。
+贪心算法
+集合 S\\mathcalS ​ 表示已选择的物品， R\\mathcalR ​ 表示未选择的物品，贪心算法求解：
+arg⁡max⁡i∈Rθ⋅rewardi+(1−θ)⋅log⁡det⁡(AS∪i) \\beginalign \\arg\\max_i \\in \\mathcalR \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalS \\cup \\i\\) \\right\\ \\endalign rewardi\\textreward_i ：物品 ii 的价值。
+det⁡(AS∪i)\\det(\\mathbfA_\\mathcalS \\cup \\i\\) : 行列式的对数， AS∪i\\mathbfA_\\mathcalS \\cup \\i\\ 是 A\\mathbfA 的一个子矩阵，这个子矩阵比 AS\\mathbfA_\\mathcalS 多了一行和一列。
+给集合 S\\mathcalS 添加一个物品 ii ，那么矩阵 AS\\mathbfA_\\mathcalS 会多一行和一列，行列式会发生变化。我们希望添加的物品i能让行列式尽量大，即物品 ii 不能跟集合 S\\mathcalS 中的任何物品相似，否则行列式会接近零。
+每一轮选择一个物品 ii ，这个物品既要有较高的价值，也不能跟已经选中的物品相似。对于集合 R\\mathcalR 中所有的物品 ii 我们都需要计算这样的行列式。算法的难点就在于计算行列式。
+暴力算法
+对于单个 ii ，计算 AS∪i\\mathbfA_\\mathcalS \\cup \\i\\ 的行列式需要 O(∣S∣3)O(|\\mathcalS|^3) 时间。
+计算行列式需要对矩阵 AS\\mathbfA_\\mathcalS 做 Cholesky分解或者特征分解，时间复杂度都是矩阵 AS\\mathbfA_\\mathcalS 大小的三次方。
+想要求解上面的公式，需要对集合 R\\mathcalR 中所有物品 ii 求行列式。
+对于所有的 i∈Ri \\in \\mathcalR ，计算行列式需要时间 O(∣S∣3⋅∣R∣)O(|\\mathcalS|^3 \\cdot |\\mathcalR|) 。
+想要从 nn 个物品中选出 kk 个物品，要重复求解上面的公式 kk 次才能选出 kk 个物品。如果暴力计算行列式，那么总时间复杂度为：
+O(∣S∣3⋅∣R∣⋅k)=O(nk4) \\beginalign O(|\\mathcalS|^3 \\cdot |\\mathcalR| \\cdot k) = O(nk^4) \\endalign 集合 S\\mathcalS 大小不超过 kk 。
+集合 R\\mathcalR 的大小不超过 nn 。
+暴力算法的总时间复杂度为
+O(n2d+nk4) \\beginalign O(n^2d+nk^4) \\endalign n2dn^2d ：计算矩阵 A\\mathbfA 的时间。
+nk4nk^4 ：计算行列式的时间。
+nn 的量级是几百。
+kk 和 dd 的量级都是几十。
+Hulu 的快速算法
+Hulu 的论文设计了一种数值算法：仅需 O(n2d+nk2)O(n^2d + nk^2) 的时间从 nn 个候选子集合中选择 kk 个物品。
+时间复杂度：
+给定向量 v1,…,vn∈Rd\\mathbfv_1, \\dots, \\mathbfv_n \\in \\mathbbR^d ，需要 O(n2d)O(n^2d) 时间计算矩阵 A\\mathbfA 。我们必须要算矩阵 A\\mathbfA ，因为算法运行的过程中要不断用到 A\\mathbfA 的子矩阵。
+用 O(nk2)O(nk^2) 时间计算所有的行列式（用 Cholesky 分解避免掉了绝大部分的计算）
+Cholesky 分解 AS=LL⊤\\mathbfA_\\mathcalS = \\mathbfL \\mathbfL^\\top ，其中 L\\mathbfL 是下三角矩阵（对角线以上的元素全零）。
+Cholesky 分解计算矩阵 AS\\mathbfA_\\mathcalS 的行列式。
+下三角矩阵 L\\mathbfL 的对角元素 det⁡(L)\\det(\\mathbfL) 等于 L\\mathbfL 的对角元素的乘积。 AS\\mathbfA_\\mathcalS 的行列式为 det⁡(AS)=det⁡(L)2=∏ilii2\\det(\\mathbfA_\\mathcalS) = \\det(\\mathbfL)^2 = \\prod_i l_ii^2 。 已知 AS=LLT\\mathbfA_\\mathcalS = \\mathbfL\\mathbfL^T ，可以快速求出所有 AS∪i\\mathbfA_\\mathcalS \\cup \\i\\ ，的 Cholesky 分解，那么给 AS\\mathbfA_\\mathcalS 添加一行和一列，不需要重新算一遍Cholesky 分解，通过快速算出 Cholesky分解变化的地方，可以快速算出所有 AS∪i\\mathbfA_\\mathcalS \\cup \\i\\ 的行列式。
+具体算法
+对于贪心算法求解公式：
+arg⁡max⁡i∈Rθ⋅rewardi+(1−θ)⋅log⁡det⁡(AS∪i) \\beginalign \\arg\\max_i \\in \\mathcalR \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalS \\cup \\i\\) \\right\\ \\endalign 初始时 S\\mathcalS 中只有一个物品， AS\\mathbfA_\\mathcalS 是一个 1×11 \\times 1 的矩阵。
+每一轮循环，基于上一轮算出的Cholesky分解： AS=LL⊤\\mathbfA_\\mathcalS = \\mathbfL \\mathbfL^\\top ，快速求出增加一行一列之后 AS∪i\\mathbfA_\\mathcalS \\cup \\i\\ 的 Cholesky 分解，从而求出 log⁡det⁡(AS∪i)\\log \\det(\\mathbfA_\\mathcalS \\cup \\i\\) 。
+DPP 的扩展 滑动窗口 用 S\\mathcalS 表示已选择的物品，用 R\\mathcalR 表示未选择的物品，DPP 的贪心算法求解：
+arg⁡max⁡i∈Rθ⋅rewardi+(1−θ)⋅log⁡det⁡(AS∪i) \\beginalign \\arg\\max_i \\in \\mathcalR \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalS \\cup \\i\\) \\right\\ \\endalign 随着集合 S\\mathcalS 增大，其中相似物品越来越多，物品向量会趋近线性相关。这会导致行列式 det⁡(AS)\\det(\\mathbfA_\\mathcalS) 会坍缩到零，对数趋于负无穷，此时DPP 就失效了。
+贪心算法：
+arg⁡max⁡i∈Rθ⋅rewardi+(1−θ)⋅log⁡det⁡(AS∪i) \\beginalign \\arg\\max_i \\in \\mathcalR \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalS \\cup \\i\\) \\right\\ \\endalign 滑动窗口：
+arg⁡max⁡i∈Rθ⋅rewardi+(1−θ)⋅log⁡det⁡(AW∪i) \\beginalign \\arg\\max_i \\in \\mathcalR \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalW \\cup \\i\\) \\right\\ \\endalign 规则约束 贪心算法每轮从 R\\mathcalR 中选出一个物品：
+arg⁡max⁡i∈Rθ⋅rewardi+(1−θ)⋅log⁡det⁡(AW∪i) \\beginalign \\arg\\max_i \\in \\mathcalR \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalW \\cup \\i\\) \\right\\ \\endalign 有很多规则约束，例如最多连续出 55 篇视频笔记（如果已经连续出了 55 篇视频笔记，下一篇必须是图文笔记）。
+用规则排除掉 R\\mathcalR 中的部分物品，得到子集 R′\\mathcalR^\\prime ，然后求解：
+arg⁡max⁡i∈R′θ⋅rewardi+(1−θ)⋅log⁡det⁡(AW∪i) \\beginalign \\arg\\max_i \\in \\mathcalR^\\prime \\left\\ \\theta \\cdot \\textreward_i + (1 - \\theta) \\cdot \\log \\det(\\mathbfA_\\mathcalW \\cup \\i\\) \\right\\ \\endalign Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:12,tag:"en",href:"/blogs/recommendersystem/coldstart/",title:"RecommenderSystem-7-物品冷启动",description:"【笔记】wangshusen-推荐系统：物品冷启动",content:`评价指标 物品冷启动 UGC (user generated content) : 内容都由用户自己上传。如小红书、b站、油管、知乎。
+PGC (platform generated content）: 主要内容是平台采购。如 netflix ，disney plus，腾讯视频。
+研究 UGC的物品冷启动
+UGC 比PGC的冷起更难：这是因为用户自己上传的内容良莠不齐，而且量很大，很难用人工去评判，很难让运营人员做流量调控。
+小红书上用户新发布的笔记。
+B站上用户新上传的视频。
+今日头条上作者新发布的文章。
+为什么要特殊对待新笔记？
+新笔记缺少与用户的交互（很难根据用户的行为做推荐），导致推荐的难度大、效果差。如果用正常的推荐链路，新笔记很难得到曝光，即使得到曝光效果也不好，消费指标会很差。
+扶持新发布、低曝光的笔记，可以增强作者发布意愿。出现首次曝光和交互的时间越快，扶持新发布低曝光的笔记可以增强作者的发布意愿，越有利于作者的积极性。
+优化冷启的目标
+精准推荐：克服冷启的困难，把新笔记推荐给合适的用户，不引起用户反感。
+激励发布：流量向低曝光新笔记倾斜，激励作者发布。
+挖掘高潜：通过初期小流量的试探，找到高质量的笔记，给与流量倾斜。
+评价指标 作者侧指标：
+发布渗透率、人均发布量。对低曝光的笔记扶持的越好，作者测指标就越高。 用户侧指标：反映出推荐是否精准，是否会引起用户反感。
+新笔记指标：新笔记的点击率、交互率。
+大盘指标：用户消费时长、日活、月活。
+冷启动的目标不是促进消费指标增长，但冷启的策略也不能显著伤害消费指标，应该尽量让消费指标持平。
+内容侧指标：
+高热笔记占比 （30天内点击超过1000的笔记），这种指标反映出冷起是否能挖掘出优质笔记，帮助优质笔记成长为热门 作者侧指标 发布渗透率(penetration rate)
+作者的发布渗透率可以衡量作者的发布积极性：
+发布渗透率=当日发布人数/日活人数 \\beginalign \\text发布渗透率=\\text当日发布人数/\\text日活人数 \\endalign 即某一天用户成为作者的比例就等于渗透率。发布一篇或以上，就算一个发布人数。
+例：
+当日发布人数＝100 W。
+日活人数＝2000 W。
+发布渗透率=100／2000=5%。
+人均发布量
+人均发布量=当日发布笔记数/日活人数 \\beginalign \\text人均发布量 = \\text当日发布笔记数/ \\text日活人数 \\endalign 例：
+每日发布笔记数=200 W。
+日活人数=2000 W。
+人均发布量=200／ 2000= 0.1。
+人均发布量比发布渗透率要大一些，因为一些作者一天会发好几篇笔记。
+作者侧指标
+发布渗透率、人均发布量反映出作者的发布积极性。
+冷启的重要优化目标是促进发布，增大内容池。
+新笔记获得的曝光越多，首次曝光和交互出现得越早，作者发布积极性越高。
+所以要把流量向新笔记倾斜，让新笔记获得更多的曝光，同时也要优化新笔记的链路，让新笔记出现曝光和交互尽量快，比如把首次曝光时间从五分钟降低到半分钟。
+用户侧指标 新笔记的消费指标
+考察新笔记的点击率、交互率。如果新笔记符合用户兴趣，那么消费指标会得到改善。但只看全体新笔记的消费指标是不够的，不能反映出真实的推荐效果。
+问题：
+推荐系统往往存在严重的头部效应，曝光的基尼系数很大。少数头部新笔记占据了大部分的曝光。
+这导致新笔记的整体消费指标主要取决于少量头部的新笔记，整体的消费指标不能反映出大部分新笔记的情况。假如绝大部分新笔记都推不准，但是头部新笔记推得特别准，那么整体的消费指标也会很好。
+解决方案
+分别考察高曝光、低曝光新笔记，例如设置1000次曝光作为阈值。
+高曝光：比如&gt;1000次曝光。
+低曝光：比如&lt;1000次曝光。
+高曝光的笔记有充足的用户交互记录，即使不用冷启动技术做特殊处理，推荐也能做得准。
+我们更应该关注低曝光的新笔记，提升低曝光新笔记的点击率和交互率：
+低曝光的新笔记占比很高，绝大部分的新笔记都是低曝光，而高曝光的新笔记的占比很低。
+低曝光的新笔记的推荐不容易做好，低曝光笔记的用户交互信息很少，推荐不够准，需要设计专门的技术处理低曝光新笔记。
+大盘消费指标
+大盘消费指标不区分新笔记和老笔记，大盘的指标包括消费时长、日活、月活。
+优化冷起的目标不是提升大盘的指标，而是要确保新的策略不会显著伤害大盘的指标。
+大力扶持低曝光新笔记会发生什么?
+作者侧发布指标变好：如果大力扶持低曝光的新笔记，给低曝光的新笔记更多的曝光，那么可以激励作者发布，让作者侧的发布指标变好。
+用户侧大盘消费指标变差：低曝光笔记缺少用户交互推荐，做的不准。如果增加低曝光笔记的推荐，那么用户的体验会下降，造成消费时长日活月活的降低。
+所以我们做新笔记实验的时候要考察大盘的消费指标，希望大盘的消费指标能够基本持平，确保新笔记的策略不会伤害用户的体验。
+内容测指标 高热笔记占比
+高热笔记：前30天获得1000+次点击（在小红书的场景下）。高热笔记通常是质量高受用户欢迎的笔记。
+高热笔记占比越高，高热笔记占比高，说明冷启阶段挖掘优质笔记的能力越强，让优质笔记能成长起来。
+总结 冷启动的评价指标
+作者侧指标：发布渗透率、人均发布量。
+用户侧指标：新笔记消费指标、大盘消费指标。
+内容侧指标：高热笔记占比。
+普通笔记的推荐通常只考察用户测指标
+冷启动的优化点
+优化推荐全链路 (包括召回和排序）：
+每一个环节都针对新笔记做优化，让新笔记有足够多的机会走完链路被曝光，还要尽量让新笔记的推荐做得准，不要引起用户的反感。
+流量调控(流量怎么在新物品、老物品中分配)
+让流量向新笔记倾斜，帮助新笔记获得更多的曝光机会。
+简单的召回通道 召回的依据
+新笔记拥有的信息：
+自带图片、文字、地点。
+算法或人工标注的标签。
+新笔记缺少的信息：
+没有用户点击、点赞等信息（反映出笔记本身的质量）。
+ItemCF 、UserCF之类的召回通道需要知道笔记跟哪些用户有过交互，如果一篇笔记还没有跟用户交互，就走不了 ItemCF 这种召回通道。
+没有笔记 ID embedding。
+召回和排序模型都有embedding层，把每个笔记id映射到一个向量，这个向量是从用户跟笔记交互的行为中学习出来的。冷起的时候，这个向量是刚刚初始化的，还没有用反向传播更新，反映不出笔记的特点。
+召回的困难
+缺少用户交互，还没学好笔记ID embedding，导致双塔模型效果不好。（双塔模型是推荐系统中最重要的召回通道）
+缺少用户交互，导致ItemCF不适用
+ItemCF不适用于物品冷启动
+ItemCF做召回的原理是判断两篇笔记的相似度有多高，要根据与笔记交互过的用户来判定两篇笔记的相似度。
+图中这些用户跟两篇笔记中至少一篇交互过，其中部分用户是重合的，同时喜欢两篇笔记，重合度有多大，可以反映出两篇笔记的相似度有多高。
+假设右边绿色的物品是新笔记，新笔记还没有跟用户发生交互，或者只跟很少几个用户发生交互，那么ItemCF就没有办法根据重合的用户来计算两篇笔记的相似度。
+召回通道 不适用:
+ItemCF召回。 改造后适用
+双塔模型：需要用笔记的 id embedding，所以直接用于冷起效果不好。需要做特殊的处理。 适用
+类目、关键词召回：类目、关键词是两种弱个性化的召回通道。在笔记刚刚发布的时候，这两种召回通道是最有用的。但是在笔记发布一段时间之后，这两种召回通道会失效。
+聚类召回。
+Look-Alike召回。
+双塔模型 常见的双塔模型，左边是用户塔输入，是用户特征，右边是物品，它输入是笔记id和其他笔记特征。
+两个塔各自输出一个向量，两个向量的余弦相似度表示用户对物品的兴趣
+物品id（笔记id）是物品塔中最重要的特征。
+神经网络有一个embedding层，把笔记id映射成向量，每篇笔记都有一个 ID embedding向量，需要从用户和笔记的交互中学习。
+由于新笔记还没有跟几个用户交互过，因此他的embedding向量还没有学好。如果直接用双塔模型做新笔记的召回效果会不太好。
+改进方案1：新笔记使用 Default embedding。
+Default embedding：共享的 ID 对应的 embedding 向量。
+物品塔做 ID embedding 时，让所有新笔记共享一个ID，而不是用自己真正的ID。此时所有新笔记的 ID embedding 向量都是相同的。
+新笔记自己的 ID embedding 向量还没有学到，不如大家先共享一个默认的向量，这个向量是学出来的，而不是随机初始化或者全民初始化。学出来的 Default embedding 比随机初始化和全民初始化更好
+新笔记发布之后，逐渐会有点击和交互，这些信号可以用来学习笔记的 ID embedding。到下次模型训练的时候，新笔记才有自己的 ID embedding 向量。
+改进方案2：利用相似笔记 embedding 向量。
+当新笔记发布之后，查找Topk内容最相似的高曝笔记。在小红书的应用中相似可以用图片、文字、类目、来定义。
+用多模态神经网络把一篇笔记的图文内容表征为一个向量，每当一篇新笔记发布的时候，寻找最相似的 kk 个向量。
+把 kk 个高曝笔记的 embedding 向量取平均，作为新笔记的embedding。
+用高曝光笔记的原因：他们的 ID embedding 通常学的比较好
+多个向量召回池
+多个召回池，让新笔记有更多曝光机会。
+1小时新笔记。 6小时新笔记。 24小时新笔记。 30天老笔记。 假如只有一个30天笔记的召回池，那么新笔记被召回的几率很小。
+所有这些召回池共享同一个双塔模型，所以多个召回池不增加训练的代价。
+类目/关键词 召回 用户画像
+感兴趣的类目：美食、科技数码、电影…… 感兴趣的关键词：纽约、职场、搞笑、程序员、大学…… 系统维护类目索引：
+类目→笔记列表(按时间倒排) \\beginalign \\text类目 \\rightarrow \\text笔记列表 \\text(按时间倒排) \\endalign 索引上的 key 是类目，比如美食旅游美妆这样比较大的类目，也可以是更细腻度的类目，比如日本料理， 国内旅游护肤品这样的类目。
+每个类目后面是一个笔记的列表，按照发布时间倒排，最新发布的笔记排在最前面。
+用类目索引做召回:
+用户画像→类目→笔记列表 \\beginalign \\text用户画像 \\rightarrow \\text类目 \\rightarrow \\text笔记列表 \\endalign 取回笔记列表上前k篇笔记（即最新的 kk 篇）。 【Example】
+一个用户刷新小红书的时候，系统要给他做推荐。
+系统根据这位用户的画像，知道他对哪些类目感兴趣，取回这些类目。
+比如他对美食和旅游感兴趣，然后到类目索引上找到美食和旅游对应的两个笔记列表。
+取回笔记列表上美食的前 kk 篇笔记，旅游的前 kk 篇笔记，这样就得到 2k2k 篇笔记作为召回的结果。
+基于关键词的召回
+系统维护关键词索引：
+关键词→笔记列表(按时间倒排) \\beginalign \\text关键词 \\rightarrow \\text笔记列表 \\text(按时间倒排) \\endalign 索引上的key是关键词，每个关键词后面有一个笔记列表，按照时间倒排。 根据用户画像上的关键词做召回。
+缺点
+只对刚刚发布的新笔记有效，留给每篇笔记的窗口期很短。
+取回某类目／关键词下最新的 kk 篇笔记。
+发布几小时之后，那么大概率会被排在几百甚至几千的位置上，就再没有机会被召回。
+弱个性化，不够精准。
+按照用户感兴趣的类目关键词做召回比较宽泛。假如我喜欢观赏鱼，它属于宠物的类目，但是最新发布的100篇宠物笔记可能都是猫猫狗狗的，大概率没有我感兴趣的观赏鱼，于是召回的100篇都是我不感兴趣的。
+虽然类目召回和关键词召回的缺点很明显，但他们仍然对冷启很重要，它能让刚刚发布的新笔记立刻获得曝光，有助于提升作者的发布积极性。
+聚类召回 基本思想
+如果用户喜欢一篇笔记，那么他会喜欢内容相似的笔记。
+事先训练一个神经网络，基于笔记的类目和图文内容；把笔记映射到向量。
+对笔记向量做聚类，划分为1000 cluster，记录每个cluster的中心方向。（k-means 聚类，用余弦相似度。）
+聚类索引
+一篇新笔记发布之后，用神经网络把它的图文内容映射到一个特征向量。
+从1000个向量（对应1000个cluster）中找到最相似的向量，作为新笔记的cluster。
+索引：
+cluster→笔记ID列表(按时间倒排) \\beginalign \\textcluster \\rightarrow \\text笔记ID列表 \\text(按时间倒排) \\endalign 线上召回
+给定用户ID，找到他的 last-n 交互的笔记列表（点赞、收藏、转发的笔记列表），把这些笔记作为种子笔记。
+把每篇种子笔记映射到向量，寻找最相似的 cluster。（知道了用户对哪些cluster感兴趣。）
+从每个cluster的笔记列表中，取回最新的 mm 篇笔记。
+最多取回 mnmn 篇新笔记。
+nn 指保留最新 nn 条用户行为记录。
+mm 指每篇种子笔记召回 mm 篇新笔记。
+缺点
+只对刚刚发布的新笔记有效。
+内容相似度模型 提取图文特征
+用CNN提取图片的特征得到一个向量。
+用 BERT 提取文字的特征得到另一个向量。
+把两个向量做 concatenation 输入全连接层神经网络，输出一个向量，这个向量是对笔记图文的表征。如果两篇笔记内容相似，它们的向量会相似。
+两篇笔记内容相似度
+两篇笔记各自都有图片和文字。
+把左边的笔记输入刚才定义的神经网络，得到笔记的特征向量，把右边的笔记映射到另一个特征向量，这两个神经网络的参数是相同的。
+计算两个向量夹角的余弦得到一个介于 −1-1 ~ 11 之间的数（余弦相似度），衡量两篇笔记有多相似。
+模型的训练 模型中的BERT 是预训练好的，可以固定BERT的参数，也可以做 finetune。
+CNN也是预训练好的，比如用 ImageNet 数据集上预训练好的神经网络，可以做f finetune 更新CNN的参数。
+全连接层是随机初始化的，需要从数据中学习。
+每个训练样本都是个三元组：正样本笔记、种子笔记、负样本笔记。
+把三篇笔记输入神经网络，神经网络包含CNN、 BERT 以及全连接层，这三个神经网络的参数是完全相同的。
+神经网络输出三个向量记作 b+\\mathbfb^+ 、 a\\mathbfa 、 b−\\mathbfb^- 分别对应正样本笔记、种子笔记、负样本笔记。
+计算向量 a\\mathbfa 和 b+\\mathbfb^+ 的余弦相似度 cos⁡(a,b+)\\cos (\\mathbfa, \\mathbfb^+) ，这个数值表示种子笔记和正样本的内容相似度，越大越好。
+计算向量 a\\mathbfa 和 b−\\mathbfb^- 的余弦相似度 cos⁡(a,b−)\\cos (\\mathbfa, \\mathbfb^-) ，这个数值表示种子笔记和负样本之间的相似度，数值越小越好
+训练的目标
+让种子笔记跟正样本的相似度尽量大，让种子笔记跟负样本的相似度尽量小，即让这两个余弦相似度的差尽量大。
+Triplet hinge loss：
+最小化 Triplet hinge loss 会鼓励种子和正样本的相似度尽量大，种子和负样本的相似度尽量小
+L(a,b+,b−) = max⁡0, cos⁡(a,b−)+m−cos⁡(a,b+). L(\\mathbfa,b^+,b^-)~=~\\max\\0, ~\\cos(\\mathbfa,b^-)+m-\\cos(\\mathbfa,b^+)\\. Triplet logistic loss:
+L(a,b+,b−)=log⁡(1+exp⁡(cos⁡(a,b−)−cos⁡(a,b+))). \\mathcalL( \\mathbfa, b^+, b^-) = \\log(1 + \\exp(\\cos(\\mathbfa, b^-) - \\cos(\\mathbfa, b^+))). 正负样本的选取 正样本：相似度高的笔记： ⟨种子笔记,正样本⟩\\langle \\text种子笔记, \\text正样本\\rangle 方法一：人工标注二元组的相似度 （代价太大不划算）
+方法二：算法自动选正样本。
+筛选条件：
+只用高曝光笔记作为二元组（因为有充足的用户交互信息，算法选择的正样本比较准）。
+两篇笔记有相同的二级类目，比如都是“菜谱教程”。做这样一道筛选，可以过滤掉完全不相似的笔记。
+用ItemCF的物品相似度选正样本。（靠用户和笔记的交互记录判断笔记的相似度，有越多的用户同时对两篇笔记感兴趣，就说明两篇笔记越相似）。
+负样本： ⟨种子笔记,负样本⟩\\langle\\text种子笔记, \\text负样本\\rangle 从全体笔记中随机选出满足条件的：
+字数较多 (神经网络提取的文本信息有效)。
+笔记质量高，避免图文无关的劣质笔记。
+总结 基本思想：根据用户的点赞、收藏、转发记录，推荐内容相似的笔记。
+线下训练：多模态神经网络把图文内容映射到向量。通过比较向量的cos相似度得到哪两个向量最相似。
+线上服务：根据用户历史上喜欢的笔记召回相似的新笔记
+用户喜欢的笔记→特征向量→最近的Cluster→新笔记 \\beginalign \\text用户喜欢的笔记 \\rightarrow \\text特征向量 \\rightarrow \\text最近的Cluster \\rightarrow \\text新笔记 \\endalign 把用户历史上喜欢的笔记输入给神经网络。
+计算出一个特征向量。
+把特征向量跟1000个 cluster 中心向量做比较，找到最相似的中心向量，选择这个cluster。
+每个cluster都有一个笔记列表，按照时间顺序倒牌，选择列表上前几篇笔记也就是最新的几篇作为召回结果。
+Look-Alike 召回 Look-Alike起源于互联网广告，是互联网广告中常用的一类方法，这种方法也可以应用在推荐系统，特别是召回低曝光笔记。
+Look-Alike 在互联网广告中的应用:
+假设有个广告主想精准的给100万个目标受众投放广告。假设广告主是特斯拉，他们自己知道model three的典型用户是这样的：
+年龄在25~35，都是年轻人，受过良好教育，学历至少都是本科，特斯拉车主大多关注科技数码，而且普遍喜欢苹果的电子产品。
+把符合全部条件的用户都圈出来，重点在这个人群中投放广告，满足所有条件的受众被称作 种子用户，这样的用户数量不会很多，可能只有几万人，但是潜在的符合条件的用户可能会很多，但是我们缺少他们的部分信息，没有办法找到他们，比方说多数的用户不标自己的学历和年龄。
+广告主想给100万用户投放广告，但我们才圈出几万人，该如何发现100万潜在的目标用户呢？
+这就要用到Look-Alike 人群扩散，寻找跟种子用户相似的用户，把找到的用户称作Look-Alike用户。通过这种方式可以利用几万个种子用户，找出几10万个Look-Alike用户。
+Look-Alike只是个框架，具体该怎么样扩散有各种各样的算法。最重要的问题在于：如何定义两个用户之间的相似度？
+UserCF：两个用户有共同的兴趣点。
+Embedding：两个用户的 ID embedding向量的 cosine 较大。
+Look-Alike 用于新笔记召回
+如果用户有点击、点赞、收藏、转发的行为，用户对笔记可能感兴趣。
+把有交互的用户作为新笔记的种子用户，这些种子用户对新笔记感兴趣。
+用Look-Alike 在相似用户中扩散。根据种子用户找出更多兴趣相似的用户，把新笔记从种子用户扩散到更多 Look-Alike 用户。
+实现
+用户在小红书上发布一篇新笔记，系统会把新笔记推荐给很多用户，少数用户会对笔记感兴趣，会点击、点赞、收藏、转发，把这些用户称作种子用户。
+系统对新笔记的推荐通常不太准，有交互行为的用户数量很少，一旦有交互行为，要充分利用这种信号，让推荐变得更准。
+取回每个种子用户的embedding向量，可以复用双塔模型学到的用户向量，然后取这些用户向量的均值得到一个向量，把得到的这个向量作为新笔记的表征，这个向量反映出什么样的用户对该笔记感兴趣。
+近线更新特征向量（近线指是不用实时更新，分钟级的更新即可），在线实时更新还做不到，也没有必要在几秒内就更新特征向量。
+特征向量是有交互的用户的向量的平均。
+每当有用户交互该物品，更新笔记的特征向量。
+线上召回
+把新笔记的特征向量都放在向量数据库里（Milvus or Faiss），这些向量数据库都支持最近邻查找。
+如果有用户刷一下小红书，我们就给这个用户做一次推荐，用双塔模型计算这个用户的特征向量，拿用户的特征向量作为query，在向量数据库中做最近邻查找取回几十篇笔记，这个召回通道就叫做Look-Alike。
+图中的边表示有交互行为，有交互行为的用户叫做 种子用户，右边的用户跟种子用户比较相似，如果中间的用户喜欢这篇新笔记，那么右边的用户很可能也会喜欢这篇新笔记，这就是 Look-Alike 人群扩散召回通道。
+流量调控 冷启动的优化点
+优化全链路（包括召回和排序），每一个环节都针对新笔记做优化，让新笔记足够多的机会走完链路被曝光，还要尽量让新笔记的推荐做得准，不要让用户反感。
+流量调控 (流量怎么在新物品、老物品中分配）。
+扶持新笔记的目的
+促进发布，增大内容池。
+新笔记获得的曝光越多，作者创作积极性越高。
+反映在发布渗透率、人均发布量。
+挖掘优质笔记
+做探索，让每篇新笔记都能获得足够曝光。
+挖掘的能力反映在高热笔记占比。
+工业界的做法
+假设推荐系统只分发年龄 &lt;30&lt;30 天的笔记。
+假设采用自然分发，让新老笔记公平竞争，新笔记（年龄 &lt;24&lt;24 小时）的曝光占比为 1/301/30 。
+扶持新笔记，让新笔记的曝光占比远大于 1/301/30 。新笔记的流量远远大于自然分发的流量。
+流量调控技术的发展
+最原始的流量调控技术是强插： 在推荐结果中强插新笔记。
+提权：对新笔记的排序分数做提权(boost)。比如加上或者乘以一个系数，这样会让新笔记更占优势，获得更多的曝光机会。给新笔记提提权是投入产出比很划算的策略，实现起来也不难，效果还可以。像抖音小红书在前期都这么做。
+高级一点的技术是保量：通过提权，对新笔记做保量。比如尽量保证每篇新笔记都能在前24小时获得至少100次曝光。
+保量的手段也是提权，但是提权的策略更复杂，更精细。
+差异化保量。在笔记刚刚发布的时候，根据内容质量决定保量的目标是多少次曝光，内容质量高的保量的目标定的高，给更多的流量倾斜。
+新笔记提权 (boost) 推荐系统的链路
+粗排会做截断，从几千个物品中选出几百个。
+重排的时候会根据精排分数和多样性做抽样，从几百个物品中选出几十个曝光给用户。
+如果不用规则去干涉，而让新笔记和老笔记自由竞争，那么新笔记的曝光机会是很有限的。假设推进系统主要分发年龄 &lt;30&lt;30 天的笔记，如果纯粹用自然分发，那么曝光的笔记中年龄 &lt;24&lt;24 小时的新笔记应该占 1/301/30 。如果想让新笔记占到更多的曝光呢？
+目标：让新笔记有更多机会曝光。
+如果做自然分发， 2424 小时新笔记占比为 1/301/30 。
+做人为干涉，对新笔记提权 ，让新笔记占比大幅提升。
+干涉粗排、重排环节，给新笔记提权。可以给新笔记的分数乘以一个大于 11 的系数让新笔记更有优势，然后让新笔记和老笔记自由竞争。
+优点：容易实现，投入产出比好。
+缺点：
+曝光量对提权系数很敏感。 很难精确控制曝光量，容易过度曝光和不充分曝光。 新笔记保量 保量：不论笔记质量高低，都保证24小时获得100次曝光。
+最原始的保量方法：在原有提权系数的基础上，乘以额外的提权的系数，差异化对待不同的发布时间，不同曝光次数的笔记，比如：
+发布时间 当前曝光次数 0~24次 25~49次 50~74次 75~100次 0~5小时 1.0 1.0 1.0 1.0 6~11小时 1.1 1.0 1.0 1.0 12~17小时 1.2 1.1 1.0 1.0 18~24小时 1.3 1.2 1.1 1.0 ​
+24小时获得100次曝光是保量的目标，离100次曝光差的越多，提权的系数就越大，争取给笔记更多的曝光机会。
+例：等比例来算，12小时应该获得50次曝光，如果12小时达到50次曝光了，那么提权系数就是 11 ，不给额外的扶持。假如12小时只获得24曝光，那么就应该加大扶持力度，比如乘以提权系数1.2。
+真正做保量的时候，需要仔细调权重。
+动态提权保量
+用下面四个值计算提权系数：
+目标时间：比如 24 小时。 目标曝光：比如 100 次。 发布时间：比如笔记已经发布 12 小时。 已有曝光：比如笔记已经获得 20 次曝光。 提权系数=f(发布时间目标时间,已有曝光目标曝光)=f(0.5,0.2) \\beginalign \\text提权系数 =f(\\frac\\text发布时间\\text目标时间,\\frac\\text已有曝光\\text目标曝光) = f(0.5, 0.2) \\endalign 用这两个数来确定一个提权系数，第一个数越大，第二个数越小 ，提权系数就应该越大。
+保量的难点
+保量成功率远低于 100%100\\% 。
+很多笔记在24小时达不到100次曝光。
+保量失败的原因：
+召回、排序存在不足。
+有些类型的新笔记很难被召回，就算提前系数再高，这样的新笔记也很难获得曝光。
+排序模型有问题， 对新笔记的预估做得不准。
+提权系数调得不好，导致曝光不足
+线上环境变化会导致保量失败：
+线上环境变化：推荐系统总是在不断的升级迭代中，新增召回通道、升级排序模型，改变重排打散规则等。
+线上环境变化后，需要调整提权系数。
+思考
+给所有新笔记一个很大的提权系数（比如4倍），直到达成100次曝光为止。这样的保量成功率很高，为什么不用这种方法呢？
+给新笔记分数 boost 越多，对新笔记越有利?
+好处：笔记冷启阶段，分数提升越多，曝光次数越多。
+坏处：过了冷启动阶段之后，之前大力度的扶持可能会起到反作用。如果不要去人为提升预估分数，那么只有当遇见匹配的受众的时候，预估分数才会高，笔记才能通过排序的筛选，最终曝光给用户。假如人为大幅提升笔记的分数，那么笔记很容易通过排序的筛选，哪怕笔记不是用户特别感兴趣的话题。
+把笔记推荐给不太合适的受众会造成：
+点击率、点赞率等指标会偏低。 长期会受推荐系统打压，难以成长为热门笔记。 所以很粗暴的给新笔记提权，对新笔记并不好。需要小心调整提权系数。
+简单的保量：不论新笔记质量高低，都做扶持，在前24小时给100次曝光。
+差异化保量：不同笔记有不同保量目标，普通笔记保100次曝光，内容优质的笔记保100~500次曝光。具体的保障目标由算法判定。
+差异化保量 ：差异化保量的依据是笔记内容质量和作者质量。
+基础保量：24小时100次曝光。
+内容质量：用模型评价内容质量高低，给予额外保量目标，上限是加200次曝光。
+作者质量：根据作者历史上的笔记质量，给予额外保量目标，上限是加200次曝光
+一篇笔记最少有100次保量，最多有500次保量
+达到保量目标之后就会停止扶持，让新笔记自然分发，跟老笔记公平竞争。
+总结 流量调控：流量怎么在新老笔记之间分配。
+扶持新笔记：单独的召回通道、在排序阶段提权。
+保量：帮助新笔记在前 24小时获得100次曝光
+差异化保量：根据内容质量、作者质量，决定保量目标。
+冷启的AB测试 小红书的场景下，做新笔记冷起的 AB 测试既要看作者测指标和用户测指标。
+作者侧指标（发布测指标）：这些指标可以反映出作者的发布意愿。如果冷启做得好可以激励作者，让渗透率和发布量增长：
+发布渗透率。 人均发布量。 用户侧指标（消费测指标）：
+对新笔记的点击率、交互率。 大盘指标：消费时长、日活、月活。 标准的AB测试通常指测 大盘指标， 冷启的 AB 测试需要测很多指标。
+标准的AB测试
+把用户随机分成两组（当然也可以分成很多组），每组有百分之五十的用户，上面这组是实验组，下面这组是对照组。右边是全体的笔记，不分组。
+给实验组用户做推荐，会从全量的笔记池中选出最合适的笔记，当实验组用户发起推荐请求的时候，会用新的策略。
+给对照组用户做推荐，也是从全量的笔记池中选取最合适的笔记。如果一个用户属于对照组，给他做推荐的时候用旧的策略。
+在实验的过程中，对比两组用户消费指标的 diff。比如考察用户消费推荐内容的时长，发现实验组比对照组高了百分之一。
+冷起的AB测试
+要测两类指标，一类是用户侧的消费指标，另一类是作者测的发布指标。
+用户侧实验 推荐系统标准的 AB 测试的方法可以用于冷起考察用户侧的消费指标，比如考察策略对新笔记点击率的影响，对用户消费时长的影响。
+缺点
+限定：保量100次曝光。
+假设：新笔记曝光越多，用户使用APP时长越低。（通常来说新笔记推荐不够准新笔记太多会影响体验）。
+新策略：把新笔记排序时的权重增大两倍，这样会让新笔记有更多的机会曝光。
+结果 (只看消费指标)：显然这个新策略会伤害用户体验。
+AB测试的diff是负数（实验组不如对照组)。 如果推全，diff会缩小（比如 −2%→−1%-2\\% \\rightarrow -1\\% )。 新策略对用户体验的伤害没有 AB 测试观测到的那么严重。
+给实验组提权两倍，那么实验组用户看到的新笔记会变多，实验组的消费指标会变差。 保量一百次的曝光是确定的，既然新笔记从实验组那里得到更多的曝光，那么从对照组得到曝光就会减少，对照组的消费指标会变好。 实验组变差，对照组变好，这就导致 AB 测试观测到的 diff 很大。 作者侧实验 方案一 不对全体用户做分组。
+不对全体的老笔记分组。
+区别对待新笔记和老笔记， 按照作者随机分成两组，这样可以对比作者的发布积极性，知道新的策略能不能激励发布。
+上面这组作者是实验组，用新策略。
+下面这组作者是对照组，用旧策略。
+老笔记完全是自然分发不受新旧策略的影响，从全量的老笔记中选出用户最喜欢的推荐给用户。
+实验组的作者发的新笔记，在推荐的时候都用新策略，这些新笔记有机会触达全体用户。
+对照组的作者，他们发的新笔记都用旧策略，这些新笔记也有机会被任何一个用户看到。
+【例】
+对照组是简单的保量，不论笔记质量的好坏都保两百次曝光。
+实验组是差异化保量，有一百次曝光的基础保量，外加给优质内容和优质作者的额外保量，最多给五百次曝光。
+最后对比这两组作者发布指标，就知道哪种策略对发布更有利。
+【缺点1】：新笔记之间会抢流量。
+【例子】：实验观测到 diff，比如作者的发布指标涨了 2%2\\% ，但是推全之后，发布指标没有发生任何变化。
+设定：
+新老笔记走各自队列，各自做排序，各自做截断，新老笔记之间没有竞争。
+重排分给新笔记 1/31/3 流量，分给老笔记 2/32/3 流量，两者的曝光占比固定不变。
+新策略：把新笔记的权重增大两倍。
+在我们的设定下，这种新策略不会产生任何影响，因为新笔记只跟新笔记竞争，不跟老笔记竞争。如果把所有新笔记权重都乘以 22 ，那么新笔记之间还是公平竞争，跟原先没有区别。所以新策略不会激励发布，不会改变发布侧指标。
+新笔记的曝光占比还是三分之一。
+AB测试的结果 ：显示有正向收益 (只看发布指标)
+AB测试的 diff 是正数(实验组优于对照组) （不合理） 如果推全，diff会消失（比如 2%→0%2\\% \\rightarrow 0\\% ) 实验组给新笔记提权，对照组没有提权，实验组提权的新笔记会抢走对照组的曝光，那么实验组的发布指标会涨，对照组的发布指标会跌，这样就产生了 diff。
+从 AB 测试的结果来看，新策略有正向收益。但是在我们的设定下，给新笔记权重乘 22 是不会影响发布指标的。把新策略推全之后，发布侧指标跟以前相比还是完全一样。
+方案一有严重缺陷，AB 测试观测到的 diff 是不可信的，推全之后可能会消失。这种缺陷是新笔记之间抢流量造成。
+【缺点2】：新笔记和老笔记抢流量
+设定：
+新老笔记自由竞争，不控制新老笔记的曝光占比。 新策略：把新笔记排序时的权重增大两倍
+AB测试的结果 ：
+AB测试时， 50%50\\% 新笔记（带策略）跟 100%100\\% 老笔记抢流量，平均 11 份新笔记抢走 22 份老笔记的流量。
+推全后， 100%100\\% 新笔记（带策略）跟 100%100\\% 老笔记抢流量，平均 11 份新笔记抢走 11 份老笔记的流量。即推全之后新笔记更难抢到流量。
+作者侧AB测试结果与推全结果有些差异。diff会缩小（比如 2%→1%2\\% \\rightarrow 1\\% )。
+问题在于 AB测试和推全之后的设定发生了变化，导致 AB测试 的结果不准确。
+方案二 用户被分成了两组，上面是实验组，下面是对照组。
+实验组的用户只能看到实验组的新笔记。
+对照组的用户只能看到对照组的新笔记。
+这种设计的目的是避免两组新笔记抢流量，因此这种方案比方案一结果更可信。
+缺点在于内容池减小了，百分之五十的用户只能看到百分之五十的新笔记。
+危害：原本一个用户在刷小红书的时候，推荐系统会从全体的新笔记中选出一百篇最符合用户兴趣的，现在新笔记的内容只小了一半，一百篇最符合用户兴趣的笔记只剩了五十篇，要从差一些的笔记中再选出五十篇补上来。这会影响用户体验，造成消费者指标下跌。也就是说为了做个 AB测试导致大盘变差公司业务会受损失。
+方案二比方案一的优缺点
+优点：同时隔离作者和新笔记，新笔记的两个桶不抢流量，作者侧实验结果更可信。如果AB测试观测到发布指 标有 diff ，那就说明确实有，推全之后 diff 不会消失。
+相同：新笔记和老笔记抢流量，作者侧AB测试结果与推全结果有些差异。
+缺点：新笔记池减小一半，对用户体验造成负面影响。
+方案三 把老笔记分成两个组。
+如果这样做，小红书就像是切成两个app。如果希望实验结果精准，这种方案是最优的。如果 AB测试发现指标涨了，推全之后也会涨那么多。
+但这种方案不太实际可行，把小红书切成两个 app，内容尺小了一半，会严重损害用户体验，消费指标一定会大跌为了做个 AB测试严重损害了公司业务，这个代价不太划算。
+总结 冷启的AB测试需要观测作者发布指标和用户消费指标。（冷启的目标：激励作者发布 和 让用户满意）。
+各种AB测试的方案都有缺陷。（小红书有更好的方案，但也不完美）。
+设计方案的时候，问自己几个问题：
+实验组、对照组新笔记会不会抢流量?
+新笔记、老笔记怎么抢流量？
+同时隔离笔记、用户，会不会让内容池变小？
+如果对新笔记做保量，会发生什么？
+如果笔记从实验组用户那里获得了很多曝光，比如获得了80次曝光，笔记就不容易出现在对照组用户那里，因为只需要从对照组用户那里获得20次曝光而已，就能达到保量目标。
+如果有保量需要仔细思考实验准确性会不会受保量的影响。
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:13,tag:"en",href:"/blogs/recommendersystem/improvement/",title:"RecommenderSystem-8-涨指标的方法",description:"【笔记】wangshusen-推荐系统：涨指标的方法",content:`概述 推荐系统的评价指标 日活用户数（DAU）和 留存 是最核心的指标。（电商不同，电商最重要的是营收）
+留存
+目前工业界最常用 LT7 和 LT30 衡量留存。
+LT7: 假设某个用户今天登录了app，LT7指包括今天在内的未来 77 天有多少天登录了app。
+如果今天是 t0t_0 ，未来 77 天指的是 t0∼t6t_0 \\sim t_6 某用户今天 ( t0t_0 ) 登录 APP，未来 7 天 ( t0∼t6t_0 \\sim t_6 ) 中有 44 天登录 APP，那么该用户今天 ( t0t_0 ) 的 LT7 等于 44 。
+显然有 1≤LT7≤71 \\leq \\textLT7 \\leq 7 和 1≤LT30≤301 \\leq \\textLT30 \\leq 30 。
+LT 增长通常意味着用户体验提升。
+但是LT 增长同时DAU下降，则说明用户体验没有提升，而是策略赶走了不活跃的用户。一个极端的例子：假设 app禁止低活用户登录，则 DAU 下降，LT 增长。
+因此如果模型或者策略长了LT 我们还要看一下DAU，要确保DAU不下降
+其他核心指标：
+用户使用时长、总阅读数(即总点击数)、总曝光数。这些指标的重要性低于DAU和留存。
+用户使用的时长通常跟留存是正相关的，时长增长，LT通常会增长。
+但是时长跟阅读数、曝光数会此消彼长，时长增长，阅读数、曝光数可能会下降。
+例：抖音推荐的长视频变多，短视频变少，那么用户使用app的总时长会增加，但是曝光数会减少。因为用户看一个长视频要很久，看完之前不刷更多的视频，导致曝光数减小
+时长关系到 DAU和留存，曝光束关系到广告收入，所以需要对两者做一些平衡。
+非核心指标：
+点击率、交互率等等。
+对于UGC平台，发布量和发布渗透率也是核心指标。
+涨指标的方法 改进召回模型，添加新的召回模型 改进粗排和精排模型 提升召回、粗排、精排中的多样性 特殊对待新用户、低活用户等特殊人群 利用关注、转发、评论这三种交互行为 召回 召回模型&amp;召回通道
+推荐系统有几十条召回通道，它们的召回总量是固定的。总量越大，指标越好，粗排计算量越大。
+如果召回总量固定（如5000），那么这5000物品的总量要给几十条召回通道分配。
+双塔模型（two-tower） 和 item-to-item（I2I） 是最重要的两类召回模型，这两类模型各自有很多条召回通道，加起来可以占据召回总量的一大半。
+有很多小众的模型，占据的配额很少。在召回总量不变的前提下，添加某些召回模型可以提升核心指标。由于召回总量不变，添加这些模型会挤占掉其他模型的配额，不会增加粗排的计算量。
+添加内容池也可以涨指标：有很多内容池，比如30天物品、1天物品、6小时物品、新用户优质内容池、分人群内容池。
+同一个模型可以用于多个内容池，得到多条召回通道。只需要训练一个双塔模型，就可以同时用于30天、1天、6小时这三个内容池。只训练一个双塔模型用在三个内容池上会得到三条召回通道。每条召回通道都有一定的配额。
+不论只有1个内容池，还是有20个内容池，都只训练一个双塔模型，不会增加训练的计算量，但是每个内容池都需要一个ANN索引，还需要在线上做ANN检索，需要增加少量的计算成本
+双塔模型 方向1 优化正样本、负样本。
+简单正样本：有点击的（用户，物品）二元组。 简单负样本：随机组合的（用户，物品）二元组。 困难负样本：被召回但排序靠后的（用户，物品）二元组。 方向2 改进神经网络结构。
+Baseline：用户塔、物品塔分别是全连接网络，各输出一个向量，分别作为用户、物品的表征 改进：用户塔、物品塔分别用深度交叉网络DCN代替全连接网络· 改进：在用户塔中使用用户行为序列(last-n) ，把用户最近交互过的 NN 个物品表征为向量，把这 NN 个向量的平均作为用户的一种特征输入用户塔。 改进：使用多向量模型代替单向量模型。（标准的双塔模型也叫单向量模型，两个塔各输出一个向量，两个向量的形状相同，根据向量相似度做分类，让模型能够区分正负样本） 多向量模型
+右边是物品塔，跟单向量模型无区别，物品塔只输出一个向量，作为物品的表征。
+左边的是用户塔，跟单向量模型有区别，用户塔输出很多向量，所以叫多向量模型，用户塔输出的每个向量都跟物品向量的形状相同。
+用用户塔输出的每个向量和物品塔输出的向量计算内积或者cos相似度，作为对一个目标的预估，比如预估点击率、点赞率等。
+如果一共要预估10个目标，那么用户塔会输出10个向量，但是物品塔只输出1个向量。
+用户塔的10个向量分别去跟物品向量计算相似度，作为对10个目标的预估
+单向量模型只是做简单的二分类，区分正样本和负样本，而多向量模型有点类似排序中的多目标模型，会同时预估点击率、点赞率等很多目标。
+为什么让用户塔输出多个向量，而物品塔只输出一个向量？
+物品塔的输出是物品向量表征，要事先算出来存入向量数据库，如果每个物品有10个向量表征那么就需要建10个向量数据库做10 套ANN索引，代价很大。让物品打只输出一个向量不需要那么大代价，只需要一个向量数据库就够了。
+方向3 改进模型的训练方法。
+Baseline：做二分类，让模型学会区分正样本和负样本。 改进：结合二分类、batch 内负采样。（对于batch 内负采样，需要做纠偏。） 改进：使用自监督学习方法，让冷门物品的embedding 学得更好。 Item to item I2I是一大类模型，基于相似物品做召回。
+最常见的用法是 U2I2I（ user→item→item\\textuser \\rightarrow \\textitem \\rightarrow \\textitem ）
+用户 uu 喜欢物品 i1i_1 （用户历史上交互过的物品） 寻找 i1i_1 的相似物品 i2i_2 （即I2I) 将 i2i_2 推荐给 uu 如何计算物品相似度?
+ItemCF 及其变体。
+一些用户同时喜欢物品 i1i_1 和 i2i_2 ，则认为 i1i_1 和 i2i_2 相似。（靠用户的行为来判断两个物品有多相似）
+ItemCF、Online ItemCF、Swing、Online Swing 都是基于相同的思想。
+44 种模型召回的结果存在足够大的差异，线上同时使用上述4种I2I模型，各分配一定配额，各自的配额需要仔细调整。
+基于物品向量表征，计算向量相似度。（双塔模型、图神经网络均可计算物品向量表征。）
+小众的召回模型 类似 I2I 的模型 U2U2I ( user→user→item\\textuser \\rightarrow \\textuser \\rightarrow \\textitem ): 基于相似用户做推荐：已知用户 u1u_1 与 u2u_2 相似，且 u2u_2 喜欢物品 ii ，那么给用户 u1u_1 推荐物品 ii 。
+U2A2I ( user→author→item\\textuser \\rightarrow \\textauthor \\rightarrow \\textitem ): 基于关注关系或者影视关注关系做推荐：已知用户 uu 喜欢作者 aa ，且 aa 发布物品 ii ，那么给用户 uu 推荐物品 ii 。
+U2A2A2I ( user→author→author→item\\textuser \\rightarrow \\textauthor \\rightarrow \\textauthor\\rightarrow \\textitem ): 基于作者的相似性做推荐： 已知用户 uu 喜欢作者 a1a_1 ，且 a1a_1 与 a2a_2 相似，作者 a2a_2 发布物品 ii ，那么给用户 uu 推荐物品 ii 。
+更复杂的模型
+Path-based Deep Network (PDN） Deep Retrieval Sparse-Interest Network (SINE) Multi-task Multi-view Graph Representation Learning (M2GRL) 这些模型构造的召回通道所占的配额都很小，但确实有效果。在召回总量不变的情况下添加这样的召回通道，可以提升大盘指标。
+总结 改进召回模型
+双塔模型：优化正负样本、改进神经网络结构、改进训练的方法。 I2I模型：同时使用ItemCF及其变体、使用物品向量表征计算物品相似度。 添加小众的召回模型，比如PDN、DeepRetrieval、SINE、M2GRL 等模型 增加召回总量显然可以提升推荐性的核心指标，但是召回的物品越多，粗排的计算量会越大，召回总量大到一定程度的时候继续增加召回总量的边际效益会很小，投入产出比不划算 在召回总量不变的前提下，调整各召回通道的配额。（可以让各用户群体用不同的配额。比如新用户和普通用户这两个群体) 排序模型 精排模型的改进 推荐系统的精排模型
+最下面是模型的输入，可以分为离散特征和连续特征。
+把离散特征输入到左边神经网络，神经网络用 embedding 层把离散特征映射到数值向量，把得到的数值向量全都拼接起来得到一个几千维的向量。再经过几个全连接层，得到上面绿色的向量，大小是几百维。
+把连续特征输入到另一个全连接网络，全连接网络的输出是上面蓝色的向量。蓝色神经网络的输入是个几百维的向量，输出也是个几百维的向量。
+由于算力的限制，下面这两个全连接网络不会很大，用CPU推理通常只有 11 ~ 22 层，用GPU推理可以有 33 ~ 66 层。
+把绿色和蓝色的向量做 concatenation，作为更上层网络的输入。
+下面这两个神经网络叫做基座，把原始特征映射到数值向量。
+绿色和蓝色向量做 combination之后，同时输入到多个全连接网络，这些全连接网络通常只有两层。这些神经网络的输出都是介于 00 和 11 之间的数值，作为各种目标的预估。比如预估点击率、点赞率、转发率、评论率。
+精排模型下面的基座和上面的多目标预估都有很多可以改进的点。
+基座 基座的输入包括离散特征和连续特征，输出一个向量，作为多目标预估的输入。
+改进1 基座加宽加深，计算量更大，预测更准确。
+精排模型的全连接网络不够大，通常会 under-fit，推荐系统的参数量很大，有几千亿甚至万亿，但99%以上的参数都在embedding层，实际上全连接网络的参数量都很小。数据量太大，但是全连接网络不够大，所以全连接网络加宽加深可以让预测变得更准。
+但是加宽加深会让计算量加大，要投入产出比。工业解实际常用的模型基座也就是 11 ~ 66 层，取决于模型的训练和推理的工程架构水平。
+改进2 做自动的特征交叉，比如bilinear和LHUC。
+FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction Learning Hidden Unit Contributions for Unsupervised Acoustic Model Adaptation 改进3 特征工程，比如添加统计特征、多模态内容特征。
+这需要算法工程师根据自己的经验设计特征，判断哪些特征对预估有用，哪些特征可以做交叉。
+多目标预估 基于基座输出的向量，同时预估点击率等多个目标。
+改进1 增加新的预估目标，并把预估结果加入融合公式。
+预估的目标数量最初只有几个，之后会增加到十几个二十几个甚至更多。
+最标准的目标包括点击率、点赞率、收藏率、转发率、评论率、关注率、完播率··· 寻找更多目标，比如进入评论区、给他人写的评论点赞&hellip;. 把新的预估目标加入融合公式。即排序的时候会用到这些新的目标。 改进2 MMoE、PLE 等结构可能有效，但往往无效。
+Modeling Task Relationships in Multi-task Learning with Multi-gate Mixture-of-Experts Progressive Layered Extraction (PLE): A Novel Multi-Task Learning (MTL) Model for Personalized Recommendations 改进3 纠正position bias （DEBIAS）可能有效，也可能无效
+Recommending what video to watch next: a multitask ranking system 粗排模型的改进 粗排的打分量比精排大10倍，因此粗排模型必须够快。
+简单模型：多向量双塔模型，同时预估点击率等多个目标。
+复杂模型：三塔模型效果好，但工程实现难度较大。
+COLD: Towards the Next Generation of Pre-Ranking System
+粗精排一致性建模 原理：蒸馏精排训练粗排，让粗排与精排更一致。
+方法1：
+pointwise 蒸馏。
+设 yy 是用户真实行为，设 pp 是精排的预估。
+用 y+p2\\fracy+p2 作为粗排拟合的目标。
+如果不做蒸馏，训练的时候会直接用 yy 作为目标。用 yy 和 pp 的均值实际的效果会比只用 yy 更好
+例：
+对于点击率目标，用户有点击 ( y=1y = 1 )，精排预估 p=0.6p = 0.6 。
+用 y+p2=0.8\\fracy+p2 = 0.8 作为粗排拟合的点击率目标。
+方法2：
+pairwise 或 listwise 蒸馏。
+给定 kk 个候选物品，按照精排预估做排序。
+做 learning to rank (LTR)，让粗排拟合物品的序（而非值）。
+例：
+对于物品 ii 和 jj ，精排预估点击率为 pi&gt;pjp_i &gt; p_j ，即精排模型认为用户更有可能点击物品 ii 而不是点击物品 jj 。 LTR 鼓励粗排预估点击率满足 qi&gt;qjq_i &gt; q_j ，否则有惩罚。 LTR 通常使用 pairwise logistic loss 作为损失函数。 优点：粗精排一致性建模可以提升核心指标
+缺点：如果精排出bug，精排预估值 pp 有偏，会污染粗排训练数据。
+推荐系统的数据流，特征服务模型推理，很多地方都可能出bug甚至挂掉。一旦出了问题，精排做的预估就不准了。有时候只是一些小问题，比如精排的某个特征服务出错了，指标会缓慢下降，不那么容易被察觉到。在找到bug之前，精排的预估有问题，做蒸馏的话会污染粗排的训练数据，让粗排也逐渐变差。
+用户行为序列建模 在排序模型优化到一定程度之后，涨指标会越来越难，这时候涨指标最主要的途径就是用户行为序列建模。
+这些是用户最近交互过的 NN 个物品，叫做 last-n，对物品的 id 做 embedding，把 NN 个物品 id 映射成 NN 个向量，最后对向量取平均得到一个向量。这个向量可以作为用户的一种特征，表示用户曾经对什么样的物品感兴趣。
+最简单的用户行为序列建模的方法是对物品向量取平均，作为一种用户特征。
+Deep Neural Networks for YouTube Recommendations
+更先进一点的方法是用注意力机制对物品向量做加权平均：DIN
+Deep Interest Network for Click-Through Rate Prediction
+工业界目前沿着SIM的方向发展。先用类目等属性筛选物品，然后用DIN对物品向量做加权平均
+Search-based User Interest Modeling with Lifelong Sequential Behavior Data for Click-Through Rate Prediction
+改进1 增加序列长度，让预测更准确；但是会增加计算成本和推理时间。
+增加序列长度最大难点是工程架构，工程架构弱的话做不到长序列。
+改进2 筛选的方法，比如用类目、物品向量表征聚类。
+物品向量的聚类
+离线用多模态神经网络（BERT或者CLIP）提取物品内容特征，将物品表征为向量。 离线将物品向量聚为1000类，每个物品有一个聚类序号，聚类通常是用层次聚类。 线上排序时，用户行为序列中有 n=1,000,000n=1,000,000 个物品。某候选物品的聚类序号是 7070 ，对 nn 个物品做筛选，只保留聚类序号为 7070 的物品。 nn 个物品中只有数千个被保留下来。 同时有好几种筛选方法，取筛选结果的并集，会得到几千或者1万多个物品。可能还需要做进一步筛选让物品数量再降低一个数量级，然后再输入到注意力层 改进3 对用户行为序列中的物品，使用ID以外的一些特征。
+最简单的方法就是对物品的id做embedding，作为物品的向量表征。这里还可以再加一些别的物品特征，效果会更好，但是不能加太多。不然线上推理的时候，通信和计算都会出问题。
+概括：沿着SIM的方向发展，让原始的序列尽量长，然后做筛选降低序列长度，最后将筛选结果输入DIN，对物品向量作加权平均。
+在线学习 模型训练的方式分为全量更新和增量更新，增量更新即在线学习Online learning，用前天积累的数据训练模型，模型不是随机初始化，而是基于前天凌晨训练好的checkpoint继续训练，要把前天的数据做random shuffle打乱，然后做随机梯度下降。只训练one epoch（每条数据只过一遍）。
+昨天凌晨做好全量训练之后，就要基于这个模型做分钟级别的增量更新 （Online learning），从昨天凌晨到今天凌晨不间断做 Online learning，隔一段时间发布一次模型，拿最新发布的模型在线上做推理。
+昨天又积累了一天的数据，到了今天凌晨又该做一次全量更新，今天凌晨的全量更新是基于昨天凌晨全量训练出的模型，而不是用下面增量训练出的模型。
+在完成这次全量训练之后，下面增量训练出的模型就可以扔掉了。
+然后基于今天凌晨全量训练出的模型，再做分钟级别的增量更新。从今天凌晨到明天凌晨不停做Online learning，每隔一段时间发布一次模型。
+在线学习对推荐系统指标的提升非常大，但是它会消耗更多的算力。
+在线学习的资源消耗
+原本每天只需要在凌晨的时候做一次全量更新，现在既需要在凌晨做全量更新，也需要全天不间断做增量更新。
+设在线学习需要 10000 CPU-core 的算力增量更新一个精排模型。
+推荐系统一共需要多少额外的算力给在线学习?
+如果不做 AB 测试，整个推荐系统多花费10000 CPU-core。
+为了做 AB 测试，线上同时运行多个不同的模型。
+如果线上有 mm 个模型，则需要 mm 套在线学习的机器。线上的 mm 个模型，其中 11 个是holdout， 11 个是推全的模型， m−2m-2 个测试的新模型。
+用 10%10\\% 的用户作为hold out， 90%90\\% 的用户用于AB 测试。
+以精排为例，假设线上有两组实验，分别测试新模型1和模型2，与推全的模型做对比，推全的模型可能与holdout 组的模型相同但也有可能不同。在多数的情况下，推全的模型会比 holdout 的模型要新几个版本。
+例子中，线上一共有 4 个精排模型， 分别是hold out、推全模型、新模型1和新模型2。那么就需要 44 套在线学习的资源。换句话说，如果公司一共给了 44 套在线学习的资源，那么线上只能同时测试 22 个新模型。
+想看 77 日留存，模型必须在线上跑至少 77 天，想看 3030 日留存，模型必须在线上跑至少 3030 天。
+在线学习的资源消耗
+线上有 mm 个模型，其中 11 个是holdout， 11 个是推全的模型， m−2m-2 个测试的新模型。
+每套在线学习的机器成本都很大，因此 mm 数量很小，制约模型开发迭代的效率。
+以某家公司为例， mm 的数量是 66 ，每套机器成本折合 1000010000 CPU-core，一共有 66 套机器，那么线上就只能同时测试 44 个模型，开发迭代的效率很低。
+在线学习对指标的提升巨大，但是会制约模型开发迭代的效率。
+老汤模型 用每天新产生的数据对模型做 11 epoch的训练。久而久之，老模型训练得非常好，很难被超过。
+对模型做改进，重新训练，很难追上老模型。
+问题1：如何快速判断新模型结构是否优于老模型?
+不需要追上线上的老模型，只需要判断新老模型谁的结构更优。
+对于新、老模型结构，都随机初始化模型全连接层。
+Embedding 层可以是随机初始化，也可以是复用老模型训练好的参数。这样处理全连接层和 embedding 层，新老模型的区别只是模型结构而已，老模型并没有训练更久的优势。
+用 nn 天（ 1010 天左右）的数据训练新老模型。（从旧到新，训练 11 epoch)。
+如果新模型显著优于老模型，新模型很可能更优。
+只是比较新老模型结构谁更好，而非真正追平老模型。
+问题 2：如何更快追平线上的老模型？
+只有几十天的数据，新模型就能追上训练上百天的老模型。
+已经得出初步结论，认为新模型很可能优于老模型。用几十天的数据训练新模型，早日追平老模型。 方法 1：尽可能多地复用老模型训练好的 embedding 层，避免随机初始化 embedding 层。（Embedding 层是对用户、物品特点的“记忆”，比全连接层学得慢。） 方法 2：用老模型做 teacher，蒸馏新模型。（用户真实行为是 yy ，老模型的预测是 pp ，用 y+p2\\fracy+p2 作为训练新模型的目标。）在训练新模型的初期做蒸馏，可以大幅加速收敛让新模型追得更快。 总结 精排模型： 改进模型基座（加宽加深、特征交叉、特征工程) 改进多目标预估（增加新目标、MMoE、去除 position bias) 粗排模型： 三塔模型（取代多向量双塔模型） 粗精排一致性建模。 用户行为序列建模 （对指标的提升非常大）： 沿着SIM的方向迭代升级，加长序列长度，改进筛选物品的方法。 在线学习：对指标提升大，但是会降低模型迭代升级效率。 老汤模型制约模型迭代升级效率，需要特殊技巧。 提升多样性 排序的多样性 精排多样性 精排阶段，结合兴趣分数和多样性分数对物品 ii 排序。
+sis_i ：兴趣分数，即融合点击率等多个预估目标。 did_i ：多样性分数，即物品 ii 与已经选中的物品的差异。 用 si+dis_i + d_i 对物品做排序。 常用MMR、DPP等方法计算多样性分数
+精排使用滑动窗口。
+精排决定了最终的曝光，曝光页面上临近的物品相似度应该小，比方说一个物品跟前五个物品要有很大的差异，不然的话两个相似的物品离得太近，会影响用户体验。所以计算精排多样性的时候要使用滑动窗口，保证同一个滑动窗口内的物品要有足够大的差异。
+粗排不使用滑动窗口。
+粗排不决定最终的曝光，只是给精排提供候选，粗排要考虑整体的多样性，而非一个滑动窗口内的多样性。
+除了多样性分数，精排还使用打散策略增加多样性。
+类目：当前选中物品 ii ，之后 55 个位置不允许跟 ii 的二级类目相同 多模态：事先计算物品多模态内容向量表征，将全库物品聚为1000类；在精排阶段，如果当前选中物品 ii ，之后 1010 个位置不允许跟 ii 同属一个聚类。因为同一个聚类中的物品的图片和文字相似，应该被打散。 粗排多样性 粗排给 5000 个物品打分，选出 500 个物品送入精排。提升粗排和精排多样性都可以提升推荐系统核心指标。
+根据 sis_i 对 5000 个物品排序，分数最高的 200 个物品送入精排。（这里暂且不考虑多样性分数，优先考虑兴趣分数，保证用户最感兴趣的物品能够进入精排）
+对于剩余的 4800 个物品，对每个物品 ii 计算兴趣分数 sis_i 和多样性分数 did_i 。多样性分数 did_i 表示物品 ii 跟已经选中的200 物品的差异，差异越大，多样性分数 did_i 就越大
+根据 Si+diS_i+d_i 对剩余 4800个 物品排序，分数最高的 300 个物品送入精排
+粗排有 5000 个候选物品，先后选择了 200 和 300 个物品，一共有 500 个物品会被送入精排
+召回的多样性 双塔模型 双塔模型是最重要的召回模型，占的召回配额最多。
+添加噪声 用户塔将用户特征作为输入，输出用户的向量表征；然后做 ANN 检索，召回向量相似度高的物品。
+线上做召回时（在计算出用户向量之后，在做ANN检索之前），往用户向量中添加随机噪声有利于推荐系统的核心指标。
+在计算出用户向量之后，ANN检索之前，往用户向量中添加随机噪声，比如随机高斯噪声
+噪声具体多强，取决于用户的特征。
+用户的兴趣越窄（比如用户最近交互的 nn 个物品只覆盖少数几个类目），就越需要提升多样性，则添加的噪声越强。
+添加噪声使得召回的物品更多样，可以提升推荐系统核心指标。
+抽样用户行为序列 用户最近交互的 nn 个物品（用户行为序列）是用户塔的输入。
+对用户行为序列做随机抽样可以提升召回的多样性。
+保留最近的r个物品 ( r≪nr \\ll n )
+从剩余的 n−rn-r 个物品中随机抽样 tt 个物品（ t≪nt \\ll n )。（可以是均匀抽样，也可以用非均匀抽样让类目平衡。）
+将得到的 r+tr+t 个物品作为用户行为序列，而不是用全部 nn 个物品。
+每次做召回的时候，都会对用户行为序列做随机抽样，这样会让双塔召回的结果有随机性，哪怕同时做两次召回，召回的结果也会有较大的差异，也就是说多样性会提升。
+抽样用户行为序列为什么能涨指标？
+注入随机性，召回结果更多样化。
+nn 可以非常大，可以利用到用户很久之前的兴趣。
+之前出于计算通信的考虑，用户行为序列不能超过 100 个物品，因此只能覆盖住用户最近很短一段时间内的兴趣点。
+现在我们可以让 N 等于 1000，然后做随机抽样选出 100 个物品，这样用户行为序列就能覆盖住用户更久之前的兴趣点，但是召回的计算代价不变。
+U2I2I：抽样用户行为序列 U2I2I（ user→item→item\\textuser \\rightarrow \\textitem \\rightarrow \\textitem ）中的第一个 item 是指用户最近交互的 nn 个物品之一（用户行为序列中的物品），在 U2I2I 中叫作种子物品。
+用户行为序列中的 nn 个物品覆盖的类目数较少，且类目不平衡。
+用户的兴趣不是很宽泛： 系统共有 200 个类目，某用户的 nn 个物品只覆盖 15 个类目。 nn 个物品的类目非常不平衡：足球类目的物品有 0.4n0.4n 个，电视剧类目的物品有 0.2n0.2n 个，其余类目的物品数均少于 0.05n0.05n 个。那么召回的物品肯定会集中在足球、电视剧，召回的多样性很差。 做非均匀随机抽样，从 nn 个物品中选出 tt 个，让类目平衡。（想法和效果与双塔中的用户行为序列抽样相似。）
+用抽样得到的 tt 个物品（代替原本的 nn 个物品）作为U2I2I的种子物品。
+类目更平衡，多样性更好。 nn 可以更大，覆盖的类目更多。 流量探索 通常来说曝光给用户的物品应该是个性化召回模型和个性化排序模型选出来的，但不妨保留 2%2\\% 的探索流量，即每个用户曝光的物品中有 2%2\\% 是非个性化的，用作兴趣探索。
+维护一个精选内容池，其中物品均为交互率指标高的优质物品。（内容池可以统一，也可以分人群，比如30～40岁男性内容池。）
+需要精选内容池：因为没有了个性化之后需要提高物品质量来吸引用户，用高质量来弥补缺少个性化造成的损失。
+从精选内容池中随机抽样几个物品，跳过排序，直接插入最终排序结果。
+没办法对这样的物品做公平的排序，这样的物品不匹配用户过去的兴趣点，大概率会被排序模型给淘汰掉，所以只能做提权或者强插
+兴趣探索在短期内负向影响核心指标，但长期会产生正向影响
+短期内做非个性化的推荐用户大概率不感兴趣，点击率会偏低。用户不看的 2%2\\% 的流量大部分会被浪费掉.
+兴趣探索在长期是有利的，可以发掘用户更多的兴趣点更好地吸引用户留存。
+总结 精排：结合兴趣分数和多样性分数做排序；做规则打散·
+粗排：只用兴趣分数选出部分物品；结合兴趣分数和多样性分数选出部分物品。
+召回：往双塔模型的用户向量添加噪声；对用户行为序列做非均匀随机抽样 （对双塔和U2I2I都适用)
+兴趣探索：保留少部分的流量给非个性化推荐。
+特殊对待特殊人群 特殊用户人群： 新用户和低活用户。
+为什么要特殊对待特殊人群?
+个性化的召回和个性化的排序都要基于用户历史行为。新用户、低活用户的行为很少，个性化推荐不准确。
+新用户、低活用户容易流失，要想办法促使他们留存。
+对于全体用户推荐系统要努力提升很多指标，包括留存、时长、阅读、消费。
+对于新用户和低活用户只需要考虑留存。
+特殊用户的行为（比如点击率、交互率）不同于主流用户，基于全体用户行为训练出的模型在特殊用户人群上有偏。
+涨指标的方法
+构造特殊内容池，用于特殊用户人群的召回。 使用特殊排序策略，保护特殊用户。 使用特殊的排序模型，消除模型预估的偏差。 构造特殊的内容池 为什么需要特殊内容池？
+新用户、低活用户的行为很少，个性化召回不准确。
+既然个性化不好，那么就保证内容质量好。用优质内容来弥补个性化的缺失。
+针对特定人群的特点构造特殊内容池，提升用户满意度。
+例如，对于喜欢留评论的用户，构造促评论内容池，满足这些用户的互动需求。
+如何构造特殊内容池
+方法1：
+根据物品获得的交互次数、交互率选择优质物品
+圈定人群：只考虑特定人群，例如 18～25 岁一二线城市男性。
+构造内容池：用该人群对物品的交互次数、交互率给物品打分，选出分数最高的物品进入内容池。
+内容池有弱个性化的效果。
+内容池定期更新，加入新物品，排除交互率低和失去时效性的老物品。
+该内容池只对该人群生效。
+构造特殊内容池主要是根据交互指标给物品打分，选出优质的物品
+方法2：
+做因果推断，判断物品对人群留存率的贡献’根据贡献值选物品。
+特殊内容池的召回
+通常使用双塔模型从特殊内容池中做召回
+双塔模型是个性化的。 对于新用户，双塔模型的个性化做不准。 靠高质量内容、弱个性化做弥补。 额外的训练代价？
+使用更多的内容尺不会增加训练的代价
+对于正常用户，不论有多少内容池，只训练一个双塔模型。 对于新用户，由于历史交互记录很少，需要单独训练模型。新用户有一个特殊的双塔模型，用户塔会少一些特征，但不论用在多少内容池上，新用户只需要一个自己的双塔模型就够了。 额外的推理代价？
+需要。
+离线更新ANN索引 和 线上做ANN检索都需要额外的算力，每多增加一个内容池都需要多一份额外算力。增加的计算量跟内容池大小正相关，内容池越大计算量越大。
+内容池定期更新，然后要更新ANN索引。
+线上做召回时，需要做ANN检索。
+特殊内容池都很小（比全量内容池小 1010 ～ 100100 倍），所以需要的额外算力不大。
+特殊的排序策略 排除低质量物品
+对于新用户、低活用户这样的特殊人群，业务上只关注留存，不在乎消费（总曝光量、广告收入、电商收入)。
+对于新用户、低活用户，少出广告、甚至不出广告。
+新物品冷启动要避免在新用户和低活用户上做探索。
+物品新发布时，推荐做得不准，会损害用户体验。 只在活跃的老用户上做探索，对新物品提权（boost) 不在新用户、低活用户上做探索，避免伤害用户体验。 差异化的融分公式
+新用户、低活用户的点击、交互行为不同于正常用户。低活用户的人均点击量很小，没有点击就不会有进一步的交互。
+低活用户的融分公式中，提高预估点击率的权重（相较于普通用户），降低交互率的权重。这样的话更容易促使低活用户点击物品，点进去看了用户才有可能留存。
+保留几个曝光坑位给预估点击率最高的几个物品。
+例：精排从 500 个物品中选 50 个作为推荐结果，其中 3 个坑位给点击率最高的物品，剩余 47 个坑位由融分公式决定。 甚至可以把点击率最高的物品排在第一，确保用户一定能看到。 注意这些策略只对激活用户这样的特殊人群生效，而不能对全体用户生效。如果用在活跃用户身上，那么这些策略会损害核心指标。
+特殊的排序模型 特殊用户人群的行为不同于普通用户。新用户、低活用户的点击率、交互率偏高或偏低。
+排序模型被主流用户主导，对特殊用户做不准预估。
+用全体用户数据训练出的模型，给新用户做的预估有严重偏差。 如果一个APP的用 90% 是女性，用全体用户数据训练出的模型，对男性用户做的预估有偏差。 问题：对于特殊用户，如何让排序模型预估做得准？
+方法1：
+大模型＋小模型
+用全体用户行为训练大模型（比如全连接 6 层），大模型的预估 pp 拟合用户行为 yy ，以点击率预.估为例， y=1y=1 表示用户实际有点击推荐的物品， y=0y=0 表示用户实际上没有点击
+用特殊用户的行为训练小模型（比如全连接 2 层），小模型的预估 qq 拟合大模型的残差 y−py-p yy ： 用户真实行为 pp ：大模型对用户的行为的预估 y−py-p ：大模型犯的错误 我们希望小模型能够纠正大模型犯的错误
+对主流用户只用大模型做预估 pp 。
+对特殊用户，结合大模型和小模型的预估 p+qp+q ，小模型在这里起到纠偏的作用，让预估更接近 yy 方法2：
+融合多个experts，类似MMoE。
+只用一个模型，模型有多个experts，各输出一个向量。
+对experts 的输出做加权平均。
+跟MMoE的区别在于如何计算experts的权重。
+MMoE有一个小神经网络，把全部特征作为输入，输出是experts的权重。 这里只使用用户特征计算权重。 以新用户为例，模型将用户的新老、活跃度等特征作为输入，输出权重，用于对experts做加权平均。
+例：有两个 experts 分别对应新用户和老用户，如果用户刚刚注册，那么新用户expert的权重是 1，老用户expert的权重是 0。如果用户介于新老之间，那么两个experts都有一定的权重。
+方法3
+大模型预估之后，用小模型做校准。
+用大模型预估点击率、交互率。
+大模型做完预估之后，再用一个小模型对大模型的预估做校准，校准的时候还要考虑用户特征，比如是不是新用户，有多活跃。
+将用户特征、大模型预估点击率和交互率作为小模型（例如 GBDT ）的输入。
+在特殊用户人群的数据上训练小模型，小模型的输出拟合用户真实行为。
+大模型要预估点击率和交互率，小模型再预估一次点击率和交互率。
+大模型是在全体用户的数据上训练出来的，小模型只在特殊用户人群的数据上做训练，小模型的输出拟合用户真实的行为。
+错误的做法
+每个用户人群使用一个排序模型，推荐系统同时维护多个大模型。
+系统有一个主模型；每个用户人群有自己的一个模型。 每天凌晨，用全体用户数据更新主模型。 基于训练好的主模型，在某特殊用户人群的数据上再训练1 epoch，作为该用户人群的模型。 短期可以提升指标；维护代价大，长期有害。
+起初，低活男性用户模型比主模型的AUC高 0.2%。 主模型迭代几个版本后，AUC累计提升 0.5%。 特殊人群模型太多，长期没有人维护和更新。 如果把低活男性用户模型下线，换成主模型，在低活男性用户上的AUC反倒提升 0.3% 总结: 特殊对待特殊用户人群
+召回：针对特殊用户人群，构造特殊的内容池，增加相应的召回通道。
+排序策略：排除低质量物品，保护新用户和低活用户；特殊用户人群使用特殊的融分公式。
+排序模型：结合大模型和小模型，小模型拟合大模型的残差；只用一个模型，模型有多个experts；大模型预估之后，用小模型做校准。
+交互行为 用户的交互行为：点赞、收藏、转发、关注、评论。
+推荐系统如何利用交互行为？
+最简单的方法：将模型预估的交互率用于排序。
+模型将交互行为当做预估的目标。
+将预估的点击率、交互率做融合，作为排序的依据。
+关注 关注量对留存的价值
+对于一位用户，他关注的作者越多，则平台对他的吸引力越强 用户留存率（ retention rate rr ）与他关注的作者数量（follow ff ）正相关 （但非线性）。 对于某个用户，如果他的 ff 比较小，它留存率 rr 对 ff 会比较敏感，此时增加 ff 对留存率提升比较大。则推荐系统要促使该用户关注更多作者。 方法1：
+用排序策略提升关注量。
+对于用户 uu ，模型预估候选物品 ii 的关注率为 pip_i 。
+设用户 uu 已经关注了 ff 个作者。
+我们定义单调递减函数 w(f)w(f) ，用户已经关注的作者越多，则 w(f)w(f) 越小。
+在排序融分公式中添加 w(f)⋅piw(f) \\cdot p_i ， w(f)w(f) 是权重， pip_i 是预估的关注率。
+用户关注作者数量 ff 比较小的时候， w(f)w(f) 这一项起到了促关注的作用。
+如果 ff 小则 w(f)w(f) 大，如果 pip_i 同时也大，则 w(f)⋅piw(f) \\cdot p_i 给物品 ii 带来很大加分。
+如果 ff 很大则 w(f)w(f) 就会接近 00 ，添加 w(f)⋅piw(f) \\cdot p_i 这一项乘积就不起作用了。
+只有在用户 uu 已经关注的作者 ff 很小的时候排序策略才会起到促关注的作用。
+方法2：
+构造促关注内容池和召回通道。
+这个内容池中物品的关注率高，可以促关注。 如果用户关注的作者数 ff 较小，则对该用户使用该内容池。 召回配额可以固定，也可以与 ff 负相关。用户关注作者越少，就从这个内容池召回越多的物品。 粉丝数对促发布的价值
+UGC 平台将作者发布量、发布率作为核心指标，希望作者多发布。作者发布的物品被平台推送给用户，会产生点赞、评论、关注等交互。交互（尤其是关注、评论）可以提升作者发布积极性。
+作者的粉丝数越少，则每增加一个粉丝对发布积极性的提升越大。
+用排序策略帮助低粉新作者涨粉。
+某作者 aa 的粉丝数（被关注数）为 faf_a 。
+作者 aa 发布的物品 ii 可能被推荐给用户 uu ，模型预估关注率为 puip_ui 。即当用户 uu 看到物品 ii 之后关注作者 aa 的概率为 puip_ui 。
+我们定义单调递减函数 w(fa)w(f_a) 作为权重；作者 aa 的粉丝越多，则 w(fa)w(f_a) 越小。
+如果作者粉丝数 faf_a 很小，而且预估关注率 puip_ui 较高，那么 w(f)⋅puiw(f) \\cdot p_ui 就会很大，让物品 ii 的排序很靠前，当用户看到物品 ii 之后有较高的概率会关注作者。
+在排序融分公式中添加 w(f)⋅puiw(f) \\cdot p_ui 帮助低粉作者涨粉。
+隐式关注关系
+召回通道U2A2I： user→author→item\\textuser \\rightarrow \\textauthor \\rightarrow \\textitem 显式关注关系：用户 uu 关注了作者 aa ，将 aa 发布的物品推荐给 uu 。（点击率、交互率指标通常高于其他召回通道。)
+隐式关注关系：用户 uu 喜欢看作者 aa 发布的物品，但是 uu 没有关注 aa 。
+隐式关注的作者数量远大于显式关注。挖掘隐式关注关系，构造U2A2I召回通道，可以提升推荐系统核心指标。
+转发 （分享） 转发最重要的价值是吸引站外流量。
+促转发（分享回流）
+A 平台用户将物品转发到 B 平台，可以为 A 吸引站外流量。
+推荐系统做促转发（也叫分享回流）可以提升 DAU 和消费指标。
+简单提升转发次数是否有效呢？
+模型预估转发率为 pp ，融分公式中有一项 w⋅pw \\cdot p ，让转发率大的物品更容易获得曝光机会。 增大权重 ww 可以促转发，吸引站外流量，但各种指标是此消彼长的，会负面影响点击率和其他交互率。 不能简单粗暴增大转发的权重，这样会损害点击和其他交互。
+KOL 建模
+目标：在不损害点击和其他交互的前提下，尽量多吸引站外流量。
+什么样的用户的转发可以吸引大量站外流量？
+答案：其他平台的 Key Opinion Leader（KOL）
+用户 uu 是我们站内的KOL，但他不是其他平台的KOL，他的转发价值大吗?
+它不是其他平台的KOL，他把物品转发到其他平台，大概率吸引不到其他平台的流量，所以他的转发价值不大。
+用户在我们站内没有粉丝，但他是其他平台的KOL，他的转发价值大吗？
+它是其他平台的KOL，可以吸引到其他平台的流量，所以他的转发价值大。
+如何判断本平台的用户是不是其他平台的KOL?
+看一个用户历史上的转发平均能带来多少站外的流量从而判断这个用户是不是站外的KOL。如果某个用户历史上的转发平均能带来很多流量，就认为他是站外的KOL
+如何将用户的KOL身份用于排序和召回?
+方法1：排序融分公式中添加额外的一项 ku⋅puik_u \\cdot p_ui 。
+kuk_u ：如果用户 uu 是站外 KOL，则 kuk_u 大。
+puip_ui ：为用户 uu 推荐物品 ii ，模型预估的转发率。
+如果 uu 是站外 KOL，则多给他曝光他可能转发的物品。
+如果 uu 不是其他平台的KOL，那么权重 kuk_u 接近零，添加这一项总是接近零，不会干扰排序中分公式
+这种促转发的策略只影响少数用户，对绝大多数用户没有影响
+方法2：构造促转发内容池和召回通道，对站外KOL生效，召回的配额可以固定，也可以与KOL分数 kuk_u 挂钩。
+总之只要识别出某个用户是站外KOL，推荐系统就会给他用特殊的排序策略和召回通道。让他在不知不觉中就转发了更多的物品到站外。
+评论 UGC 平台将作者发布量、发布率作为核心指标，希望作者多发布。
+关注、评论等交互可以提升作者发布积极性。如果新发布物品尚未获得很多评论，则给预估评论率提权，让物品尽快获得评论。
+做法：
+排序融分公式中添加额外一项 wi⋅piw_i \\cdot p_i 。
+wiw_i : 权重，与物品 ii 已有的评论数量负相关。物品 ii 已经获得的评论越少，就越应该做评论，要把权重 wiw_i 设置的越大 pip_i : 为用户推荐物品 ii ，模型预估的评论率。 添加 wi⋅piw_i \\cdot p_i 到融分公式可以在评论数很少的时候促评论，而在评论数较多的时候这一项几乎等于 00 ，不起作用
+评论的其他价值
+有的用户喜欢留评论，喜欢跟作者、评论区用户互动
+给这样的用户添加促评论的内容池，让他们更多机会参与讨论。 有利于提升这些用户的留存。 有的用户常留高质量评论 (评论的点赞量高)
+高质量评论对作者、其他用户的留存有贡献。（作者、其他用户觉得这样的评论有趣或有帮助。） 用排序和召回策略鼓励这些用户多留评论。 总结 利用交互行为
+关注：留存价值（让新用户关注更多作者，提升新用户留存）；发布价值（帮助新作者获得更多粉丝，提升作者发布积极性）；利用隐式关注关系做召回。
+转发：判断哪些用户是站外的KOL，利用他们转发的价值吸引站外的流量
+评论：发布价值（促使新物品获得评论，提升作者发布积极性）；留存价值（给喜欢讨论的用户创造更多留评机会）；鼓励高质量评论的用户多留评论
+Reference https://github.com/wangshusen/RecommenderSystem/`}).add({id:14,tag:"en",href:"/blogs/rope/",title:"RoPE",description:"RoPE（旋转式位置编码）及其外推和 Base 选择。",content:`RoPE RoPE 通过 绝对位置编码 的方式实现 相对位置编码
 绝对位置编码：位置索引 直接进行编码。一般都是直接构建 词嵌入向量 和 位置嵌入向量 直接相加。
 Transformer 中的 Sinusoidal 位置编码
 BERT 和 GPT 中的 训练式位置编码
@@ -1700,7 +2773,7 @@ fb(m)=∑i=0d/2−1cos⁡mb−2i/d≈∫01cos⁡mb−sds=令t=mb−s∫mb−1mco
 fb(m)≈Ci(m)−Ci(mb−1)ln⁡b \\beginequationf_b(m) \\approx \\frac\\textCi(m) - \\textCi(mb^-1)\\ln b\\endequation Ci(x)\\textCi(x) 的第一个零点 x0=0.6165⋯x_0=0.6165\\cdots 对于 m≥1m \\ge 1 ， ∣Ci(m)∣≤1/2|\\textCi(m)|\\leq 1/2 ，可以忽略
 考虑 Ci(mb−1)≤0m∈0,1,2,⋯ ,L−1\\textCi(mb^-1)\\leq 0 \\quad m\\in\\0,1,2,\\cdots,L-1\\ ，因此需要 mb−1∈[0,x0]⟹b≥mx0mb^-1 \\in [0,x_0] \\Longrightarrow b\\ge \\fracmx_0 ，即
 b≥Lx0≈2L b\\ge \\fracLx_0 \\approx 2L 这个结果比精确的数值结果要小，因为它对应于 d→∞d \\rightarrow \\infin ，无限个三角函数叠加会使得函数图像的震荡更少，看起来更加平稳（相比于有限的 dd ），从而对于固定的 bb ， fb(m)f_b(m) 的连续非负区间更长，或者反过来，对于固定的 LL ，保持 m=0,1,2,⋯ ,L−1m=0,1,2,\\cdots,L-1 的 fb(m)f_b(m) 都非负的 bb 更小。
-Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:10,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
+Reference Transformer 升级之路：2、博采众长的旋转式位置编码 Transformer 升级之路：12、无限外推的 ReRoPE？ Transformer 升级之路：16、“复盘”长度外推技术 Transformer 升级之路：18、RoPE 的底数选择原则 Extending Context Window of Large Language Models via Positional Interpolation Extending Context is Hard…but not Impossible YaRN: Efficient Context Window Extension of Large Language Models NTK-Aware Scaled RoPE allows LLaMA models to have extended (8k+) context size without any fine-tuning and minimal perplexity degradation Dynamically Scaled RoPE further increases performance of long context LLaMA with zero fine-tuning LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens Base of RoPE Bounds Context Length`}).add({id:15,tag:"en",href:"/blogs/searchengine/basics/",title:"SearchEngine-1-概要",description:"【笔记】wangshusen-搜索引擎技术：搜索引擎的基本概念",content:`搜索引擎的基本概念 查询词（query）：用户在搜索框中输入的词。
 查询建议（SUG）：用户点击搜索之前，搜索引擎会给出的相关词，如用户输入“深度学习”，SUG 可能为“深度学习框架”、“深度学习教程”等等。
 作用是让搜索引擎用起来更方便。
 文档：搜索结果，如网页链接（Google、百度）、商品（Amazon、淘宝）、视频（YouTube、B 站）
@@ -2051,7 +3124,7 @@ value：文档列表，每个查询词都对应很多篇文档，由于离线做
 【思考题】
 【问题】：搜索引擎的时效性很差，该从哪些方面改进？
 【提示】：查询词处理、召回、排序分别能做什么？
-Reference https://github.com/wangshusen/SearchEngine`}).add({id:11,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:16,tag:"en",href:"/blogs/searchengine/rel/",title:"SearchEngine-2-相关性",description:"【笔记】wangshusen-搜索引擎技术：相关性",content:`相关性：定义与分档 工业界标准流程：
 制定标注规则→标注数据 → 训练模型→线上推理 \\text制定标注规则 \\rightarrow \\text标注数据  \\rightarrow \\text 训练模型 \\rightarrow \\text线上推理  搜索产品和搜索算法团队定义相关性标注规则。
 人为将 (q,d)(q,d) 的相关性划分为 44 个或 55 个（如百度）档位。后以 44 个为例。
 相关性分档规则非常重要，假如日后有大幅变动，需要重新标注数据，丢弃积累的数据。
@@ -2440,7 +3513,7 @@ Student 小模型要先预热、再蒸馏。
 后预训练（post pretrain）：用一个 GBDT 小模型自动生成数据，将用户行为 x\\mathrmx 映射到相关性标签 y^\\haty 。用自动生成的数据训练 BERT 大模型和小模型，结合回归任务排序任务以及预训练任务。
 微调（fine tuning）：使用人工标注的数据，数据量相对较小，一般几十万（最多几百万）条样本，监督学习，同时用回归和排序任务。
 蒸馏（distillation）：先训练大模型，用训练好的大模型给几亿条 (q,d)(q, d) 打分，得到蒸馏数据；基于预热好的小模型，用蒸馏数据做监督学习；最终得到的小模型部署到线上做相关性。
-Reference https://github.com/wangshusen/SearchEngine`}).add({id:12,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
+Reference https://github.com/wangshusen/SearchEngine`}).add({id:17,tag:"en",href:"/blogs/transformer/",title:"Transformer",description:"Transformer 模型",content:`标准的 Transformer 模型主要由两个模块构成：
 Encoder（左边）：负责理解输入文本，为每个输入构造对应的语义表示（语义特征）； Decoder（右边）：负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。 这两个模块可以根据任务的需求而单独使用：
 纯 Encoder 模型：适用于只需要理解输入语义的任务，例如句子分类、命名实体识别； 纯 Decoder 模型：适用于生成式任务，例如文本生成； Encoder-Decoder 模型 或 Seq2Seq 模型： 适用于需要基于输入的生成式任务，例如翻译、摘要。 Transformer 家族 Encoder 分支 纯 Encoder 模型只使用 Transformer 模型中的 Encoder 模块，也被称为自编码 (auto-encoding) 模型。在每个阶段，注意力层都可以访问到原始输入句子中的所有词语，即具有 “双向 (Bi-directional)”注意力。
 纯 Encoder 模型通常通过破坏给定的句子（例如随机遮盖其中的词语），然后让模型进行重构来进行预训练，最适合处理那些需要理解整个句子语义的任务，例如句子分类、命名实体识别（词语分类）、抽取式问答。
@@ -2552,7 +3625,7 @@ Warmup 是在训练开始阶段，将学习率从 0 缓增到指定大小，而�
 如果不进行 Wamrup，那么模型一开始就快速地学习，由于梯度消失，模型对越靠后的层越敏感，也就是越靠后的层学习得越快，然后后面的层是以前面的层的输出为输入的，前面的层根本就没学好，所以后面的层虽然学得快，但却是建立在糟糕的输入基础上的。
 很快地，后面的层以糟糕的输入为基础到达了一个糟糕的局部最优点，此时它的学习开始放缓（因为已经到达了它认为的最优点附近），同时反向传播给前面层的梯度信号进一步变弱，这就导致了前面的层的梯度变得不准。但Adam 的更新量是常数量级的，梯度不准，但更新量依然是数量级，意味着可能就是一个常数量级的随机噪声了，于是学习方向开始不合理，前面的输出开始崩盘，导致后面的层也一并崩盘。
 如果 Post Norm 结构的模型不进行 Wamrup，我们能观察到的现象往往是：loss 快速收敛到一个常数附近，然后再训练一段时间，loss 开始发散，直至 NAN。 如果进行 Wamrup，那么留给模型足够多的时间进行“预热”，在这个过程中，主要是抑制了后面的层的学习速度，并且给了前面的层更多的优化时间，以促进每个层的同步优化。 这里的讨论前提是梯度消失，如果是 Pre Norm 之类的结果，没有明显的梯度消失现象，那么不加 Warmup 往往也可以成功训练。
-Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:13,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
+Reference Attention Is All You Need Transformers快速入门 The Illustrated Transformer The Annotated Transformer 浅谈Transformer的初始化、参数化与标准化 为什么Pre Norm的效果不如Post Norm？ 模型优化漫谈：BERT的初始标准差为什么是0.02？`}).add({id:18,tag:"en",href:"/blogs/transformer-attention/",title:"Transformer Attention",description:"Transformer Attention",content:`KV Cache KV Cache 在不影响任何计算精度的前提下，通过空间换时间思想，提高推理性能。
 KV Cache 只能用于 Decoder 架构的模型，因为 Decoder 有 Causal Mask，在推理的时候前面已经生成的字符不需要与后面的字符产生 attention，从而使得前面已经计算的 KK 和 VV 可以缓存起来。
 KV Cache 推理过程 假设模型初始输入只有 11 个 token
 Att(Q,K,V)=softmax(q1k1⊤)v1 \\mathrmAtt(Q, K, V) = \\textsoftmax(\\mathbfq_1 \\mathbfk_1^\\top ) \\mathbfv_1 其中 : Q=(q1)∈R1×dQ = \\left( \\mathbfq_1 \\right) \\in \\mathbbR^1\\times d ， K=(k1)∈R1×dK = \\left( \\mathbfk_1 \\right) \\in \\mathbbR^1\\times d ， V=(v1)∈R1×dV = \\left( \\mathbfv_1 \\right) \\in \\mathbbR^1\\times d 当模型生成第 22 个 token 时，Attention 的计算如下：
@@ -2639,7 +3712,7 @@ BL⋅(512+64)=576⋅BLBL \\cdot (512+64) = 576 \\cdot BL forward
 MoveElision 优化策略: 省略此处的拼接 RoPE 部分和非 RoPE 部分的过程，而是直接分别计算量部分的额 Attention Score 并相加（考虑 qtkj⊤=qtCkjC⊤+qtRkjR⊤\\mathbfq_t\\mathbfk_j^\\top = \\mathbfq_t^C \\mathcalk_j^C^\\top+ \\mathbfq_t^R k_j^R^\\top )
 1 2 3 4 5 6 7 8 9 # MoveElision [B, 128, L, 512]*[B, 128, L, 512] + [B, 128, L, 64]*[B, 128, L, 64] attn_weights = ( torch.matmul(q_pe, k_pe.mT) + torch.matmul(q_nope, compressed_kv.unsqueeze(-3).mT) ) * self.softmax_scale attn_weights = nn.functional.softmax( attn_weights, dim=-1, dtype=torch.float32 ).to(q_nope.dtype) attn_output = torch.einsum(&#39;bhql,blc-&gt;bhqc&#39;, attn_weights, compressed_kv) attn_output = torch.einsum(&#39;bhqc,dhc-&gt;bqd&#39;, attn_output, out_absorbed) 作者认为没有必要再改变顺序，对模型参数进行预处理，将 WUKW^UK 与 WUQW^UQ 相乘，以及将 WUVW^UV 与 WOW^O 相乘。
 这是因为， WUKW^UK 与 WUQW^UQ 相乘后的结果可以视为 HH 个大小为 1536×5121536 \\times 512 的低秩（不超过 128）矩阵，而 WUVW^UV 与 WOW^O 相乘的结果可以视为 HH 个大小为 5120×5125120 \\times 512 的低秩矩阵。相比用这些特别大的低秩矩阵做投影，明显不如按照低秩分解形式依次相乘来得划算。
-Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:14,tag:"en",href:"/blogs/distributedtraining/",title:"分布式训练",description:"DP & DDP，TP，PP，ZeRO，混合精度，通讯",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
+Reference DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model 缓存与效果的极限拉扯：从 MHA、MQA、GQA 到 MLA DeepSeek-V2 高性能推理 (1)：通过矩阵吸收十倍提速 MLA 算子`}).add({id:19,tag:"en",href:"/blogs/distributedtraining/",title:"分布式训练",description:"DP & DDP，TP，PP，ZeRO，混合精度，通讯",content:`数据并行(DP &amp; DDP) DataParallel DP 是较简单的一种数据并行方式，直接将模型复制到多个 GPU 上并行计算，每个 GPU 计算 batch 中的一部分数据，各自完成前向和反向后，将梯度汇总到主 GPU 上。
 基本流程：
 加载模型、数据至内存；
 创建 DP 模型；
@@ -2786,7 +3859,7 @@ GPipe: Easy Scaling with Micro-Batch Pipeline Parallelism
 ZeRO: Memory Optimizations Toward Training Trillion Parameter Models
 Mixed Precision Training
 python-parallel-programmning-cookbook
-MPI Reduce and Allreduce`}).add({id:15,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
+MPI Reduce and Allreduce`}).add({id:20,tag:"en",href:"/blogs/%E8%87%AA%E4%BF%A1%E6%81%AF%E4%BA%92%E4%BF%A1%E6%81%AF%E7%86%B5/",title:"自信息&互信息&熵",description:"信息论中的自信息、互信息、熵等概念",content:`自信息 在信息论中， 自信息（self-information），由克劳德·香农提出。自信息 指的是当我们接收到一个消息时所获得的信息量。
 具体来说，对于一个事件，它的 自信息 大小与其发生概率有关。它是衡量与概率空间中单个事件或离散随机变量取值相关的信息量的一种 量度。
 它用信息的单位表示，例如 bit、nat 或是 hart，使用哪个单位取决于在计算中使用的对数的底。
 自信息的期望值 就是信息论中的 熵，它反映了 随机变量采样时的平均不确定程度。
